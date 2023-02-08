@@ -1,0 +1,99 @@
+2023-02-08 17:08:35 - INFO - /Users/pengwei/.local/share/virtualenvs/WebAppUnit-pDSZ9ufv/lib/python3.9/site-packages/werkzeug/_internal.py[224] - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8099
+ * Running on http://192.168.88.228:8099
+2023-02-08 17:08:35 - INFO - /Users/pengwei/.local/share/virtualenvs/WebAppUnit-pDSZ9ufv/lib/python3.9/site-packages/werkzeug/_internal.py[224] - [33mPress CTRL+C to quit[0m
+2023-02-08 17:08:35 - INFO - /Users/pengwei/.local/share/virtualenvs/WebAppUnit-pDSZ9ufv/lib/python3.9/site-packages/werkzeug/_internal.py[224] -  * Restarting with stat
+2023-02-08 17:08:36 - WARNING - /Users/pengwei/.local/share/virtualenvs/WebAppUnit-pDSZ9ufv/lib/python3.9/site-packages/werkzeug/_internal.py[224] -  * Debugger is active!
+2023-02-08 17:08:36 - INFO - /Users/pengwei/.local/share/virtualenvs/WebAppUnit-pDSZ9ufv/lib/python3.9/site-packages/werkzeug/_internal.py[224] -  * Debugger PIN: 919-813-245
+2023-02-08 17:08:39 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/initiation.py[23] - 启动初始化任务..
+2023-02-08 17:08:39 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/initiation.py[41] - 清理临时下载文件
+2023-02-08 17:08:39 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/initiation.py[88] - 完成初始化业务参数
+2023-02-08 17:08:39 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/db/SQLHelper.py[66] - >>> 执行sql:> select platform_nw_name from tn_platform_nw_tag_init where belong_id='440100' and domain_id='AiSeeCore' 
+2023-02-08 17:08:39 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/db/SQLHelper.py[66] - >>> 执行sql:>  SELECT A.CATALOG_PATH AS catalogPath FROM TN_CATALOG_DEF A
+                    WHERE A.CATALOG_TYPE = '1'
+                    AND A.BELONG_ID = '440100' AND A.DOMAIN_ID = 'AiSeeCore' 
+2023-02-08 17:08:39 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/db/SQLHelper.py[72] - 记录数：1
+2023-02-08 17:08:39 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/db/SQLHelper.py[111] - 查询结果：/mnt/shared/AiSee_FileNode/v3-test-postgres-v31/system-440100_AiSeeCore
+2023-02-08 17:08:39 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/case.py[39] - 打开/Users/pengwei/Desktop/测试用例集/3.1/VisualModeler/controller.xls,开始获取测试用例文件名
+2023-02-08 17:08:39 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/case.py[99] - 获取到测试用例文件：/Users/pengwei/Desktop/测试用例集/3.1/VisualModeler/常用信息管理/网元模版配置.xls
+2023-02-08 17:08:39 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/case.py[175] - Excel行数：86, 列数 : 256
+2023-02-08 17:08:39 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/case.py[176] - -------------------------------------------------------------------------
+2023-02-08 17:08:39 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/case.py[255] - >>>>> 网元模版配置，数据清理
+2023-02-08 17:08:39 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/initiation.py[30] - 清理流程过程变量
+2023-02-08 17:08:40 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/operation.py[41] - 步骤：
+{
+    "操作": "ZgTempDataClear",
+    "参数": {
+        "模版类型": "网元基础信息",
+        "模版名称": "auto_网元基础信息表"
+    }
+}
+2023-02-08 17:08:40 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/operation.py[44] - 开始执行操作： ZgTempDataClear
+2023-02-08 17:08:40 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/wrap.py[53] - 当前未登录，自动执行登录操作
+2023-02-08 17:08:40 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/browser.py[12] - 开始初始化浏览器.
+2023-02-08 17:08:42 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/browser.py[22] - 浏览器初始化完成，webdriver: <selenium.webdriver.chrome.webdriver.WebDriver (session="41607404e3d7c500265cdbd9a5afe955")>
+2023-02-08 17:08:44 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/loginPage.py[74] - #######################欢迎登录AiSee系统#######################
+2023-02-08 17:08:44 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/loginPage.py[75] - 登录用户名：pw, 用户密码：1qazXSW@
+2023-02-08 17:08:45 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/windows.py[27] - 保存首个窗口句柄 首页:CDwindow-D06663ADDBC4A2BF009A7604F12DCFD5
+2023-02-08 17:08:45 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/windows.py[38] - 当前窗口信息:{'首页': 'CDwindow-D06663ADDBC4A2BF009A7604F12DCFD5'}
+2023-02-08 17:08:47 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/app/VisualModeler/doctorWho.py[41] - 进入领域页面
+2023-02-08 17:08:48 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/windows.py[37] - 保存新的窗口句柄 vm:CDwindow-09610B5C8EF9B5D54C5A013B6980C97E
+2023-02-08 17:08:48 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/windows.py[38] - 当前窗口信息:{'首页': 'CDwindow-D06663ADDBC4A2BF009A7604F12DCFD5', 'vm': 'CDwindow-09610B5C8EF9B5D54C5A013B6980C97E'}
+2023-02-08 17:08:48 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/windows.py[45] - 切换到标签页: vm，CDwindow-09610B5C8EF9B5D54C5A013B6980C97E
+2023-02-08 17:08:48 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/app/VisualModeler/doctorWho.py[73] - 点击一级菜单: 常用信息管理
+2023-02-08 17:08:49 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/app/VisualModeler/doctorWho.py[80] - 点击二级菜单: 网元模版配置
+2023-02-08 17:08:50 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/tab.py[46] - tab列表增加: 网元模版配置
+2023-02-08 17:08:50 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/tab.py[47] - 当前tab句柄信息: {'网元模版配置': "//*[contains(@class, 'tabs_item') and @mid='DeviceManager2001']"}
+2023-02-08 17:08:50 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/tab.py[52] - 切换到tab页: 网元模版配置
+2023-02-08 17:08:51 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/app/VisualModeler/commonInfo/template.py[38] - 进入 网元基础信息
+2023-02-08 17:09:23 - INFO - /Users/pengwei/.local/share/virtualenvs/WebAppUnit-pDSZ9ufv/lib/python3.9/site-packages/werkzeug/_internal.py[224] - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8099
+ * Running on http://192.168.88.228:8099
+2023-02-08 17:09:23 - INFO - /Users/pengwei/.local/share/virtualenvs/WebAppUnit-pDSZ9ufv/lib/python3.9/site-packages/werkzeug/_internal.py[224] - [33mPress CTRL+C to quit[0m
+2023-02-08 17:09:23 - INFO - /Users/pengwei/.local/share/virtualenvs/WebAppUnit-pDSZ9ufv/lib/python3.9/site-packages/werkzeug/_internal.py[224] -  * Restarting with stat
+2023-02-08 17:09:24 - WARNING - /Users/pengwei/.local/share/virtualenvs/WebAppUnit-pDSZ9ufv/lib/python3.9/site-packages/werkzeug/_internal.py[224] -  * Debugger is active!
+2023-02-08 17:09:24 - INFO - /Users/pengwei/.local/share/virtualenvs/WebAppUnit-pDSZ9ufv/lib/python3.9/site-packages/werkzeug/_internal.py[224] -  * Debugger PIN: 919-813-245
+2023-02-08 17:09:37 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/initiation.py[23] - 启动初始化任务..
+2023-02-08 17:09:37 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/initiation.py[41] - 清理临时下载文件
+2023-02-08 17:09:37 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/initiation.py[88] - 完成初始化业务参数
+2023-02-08 17:09:37 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/db/SQLHelper.py[66] - >>> 执行sql:> select platform_nw_name from tn_platform_nw_tag_init where belong_id='440100' and domain_id='AiSeeCore' 
+2023-02-08 17:09:37 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/db/SQLHelper.py[66] - >>> 执行sql:>  SELECT A.CATALOG_PATH AS catalogPath FROM TN_CATALOG_DEF A
+                    WHERE A.CATALOG_TYPE = '1'
+                    AND A.BELONG_ID = '440100' AND A.DOMAIN_ID = 'AiSeeCore' 
+2023-02-08 17:09:37 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/db/SQLHelper.py[72] - 记录数：1
+2023-02-08 17:09:37 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/db/SQLHelper.py[111] - 查询结果：/mnt/shared/AiSee_FileNode/v3-test-postgres-v31/system-440100_AiSeeCore
+2023-02-08 17:09:37 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/case.py[39] - 打开/Users/pengwei/Desktop/测试用例集/3.1/VisualModeler/controller.xls,开始获取测试用例文件名
+2023-02-08 17:09:37 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/case.py[99] - 获取到测试用例文件：/Users/pengwei/Desktop/测试用例集/3.1/VisualModeler/常用信息管理/网元模版配置.xls
+2023-02-08 17:09:37 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/case.py[175] - Excel行数：86, 列数 : 256
+2023-02-08 17:09:37 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/case.py[176] - -------------------------------------------------------------------------
+2023-02-08 17:09:37 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/case.py[255] - >>>>> 网元模版配置，数据清理
+2023-02-08 17:09:37 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/initiation.py[30] - 清理流程过程变量
+2023-02-08 17:09:38 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/operation.py[41] - 步骤：
+{
+    "操作": "ZgTempDataClear",
+    "参数": {
+        "模版类型": "网元基础信息",
+        "模版名称": "auto_网元基础信息表"
+    }
+}
+2023-02-08 17:09:38 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/gooflow/operation.py[44] - 开始执行操作： ZgTempDataClear
+2023-02-08 17:09:38 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/wrap.py[53] - 当前未登录，自动执行登录操作
+2023-02-08 17:09:38 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/browser.py[12] - 开始初始化浏览器.
+2023-02-08 17:09:40 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/browser.py[22] - 浏览器初始化完成，webdriver: <selenium.webdriver.chrome.webdriver.WebDriver (session="5e907ad7e6f585828d7165d78352e121")>
+2023-02-08 17:09:41 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/loginPage.py[74] - #######################欢迎登录AiSee系统#######################
+2023-02-08 17:09:41 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/loginPage.py[75] - 登录用户名：pw, 用户密码：1qazXSW@
+2023-02-08 17:09:42 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/windows.py[27] - 保存首个窗口句柄 首页:CDwindow-33FAA39F1A40C289745EDCF1AEF7BDDB
+2023-02-08 17:09:42 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/windows.py[38] - 当前窗口信息:{'首页': 'CDwindow-33FAA39F1A40C289745EDCF1AEF7BDDB'}
+2023-02-08 17:09:45 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/app/VisualModeler/doctorWho.py[41] - 进入领域页面
+2023-02-08 17:09:46 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/windows.py[37] - 保存新的窗口句柄 vm:CDwindow-60616E2795D844470CC96ACE9A717370
+2023-02-08 17:09:46 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/windows.py[38] - 当前窗口信息:{'首页': 'CDwindow-33FAA39F1A40C289745EDCF1AEF7BDDB', 'vm': 'CDwindow-60616E2795D844470CC96ACE9A717370'}
+2023-02-08 17:09:46 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/windows.py[45] - 切换到标签页: vm，CDwindow-60616E2795D844470CC96ACE9A717370
+2023-02-08 17:09:46 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/app/VisualModeler/doctorWho.py[73] - 点击一级菜单: 常用信息管理
+2023-02-08 17:09:47 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/app/VisualModeler/doctorWho.py[80] - 点击二级菜单: 网元模版配置
+2023-02-08 17:09:48 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/tab.py[46] - tab列表增加: 网元模版配置
+2023-02-08 17:09:48 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/tab.py[47] - 当前tab句柄信息: {'网元模版配置': "//*[contains(@class, 'tabs_item') and @mid='DeviceManager2001']"}
+2023-02-08 17:09:48 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/lib/tab.py[52] - 切换到tab页: 网元模版配置
+2023-02-08 17:09:48 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/app/VisualModeler/commonInfo/template.py[38] - 进入 网元基础信息
+2023-02-08 17:09:50 - INFO - /Users/pengwei/Desktop/WebAppUnit/src/main/python/core/app/VisualModeler/commonInfo/template.py[522] - 查询不到满足条件的数据，无需清理

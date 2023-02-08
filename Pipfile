@@ -1,0 +1,25 @@
+[[source]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+selenium = "4.1.0"
+pymysql = "1.0.2"
+xlwt = "1.3.0"
+jsonpath = "0.82"
+pyuserinput = {index = "https://pypi.tuna.tsinghua.edu.cn/simple", version = "0.1.11"}
+pykeyboard = {index = "https://pypi.tuna.tsinghua.edu.cn/simple", version = "0.1.5"}
+xlutils = "2.0.0"
+pymongo = "4.0.1"
+cx-oracle = "8.3.0"
+psycopg2 = "2.9.3"
+psycopg2-binary = "2.9.3"
+flask = "2.0.2"
+python-dateutil = "2.8.2"
+xlrd = "==1.2.0"
+
+[dev-packages]
+
+[requires]
+python_version = "3.9"

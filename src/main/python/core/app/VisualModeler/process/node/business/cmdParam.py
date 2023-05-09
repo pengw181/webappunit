@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 from src.main.python.lib.processVar import choose_var
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def cmd_node_param_set(param_mode, params):
@@ -29,7 +29,7 @@ def cmd_node_param_set(param_mode, params):
         }
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 进入参数设置iframe
     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[contains(@src,'paramCmdNode.html?')]"))
 

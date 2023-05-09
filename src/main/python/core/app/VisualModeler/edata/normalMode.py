@@ -11,7 +11,7 @@ from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.input import set_textarea
 from src.main.python.lib.level import choose_level
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class NormalModeEData:
@@ -25,7 +25,7 @@ class NormalModeEData:
         :param table_main_iframe_xpath:
         :param col_iframe_xpath:
         """
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.eData_iframe_xpath = eData_iframe_xpath
         self.tab_xpath = tab_xpath
         self.tab_iframe_xpath = tab_iframe_xpath
@@ -130,11 +130,11 @@ class NormalModeEData:
                             wait.until(ec.frame_to_be_available_and_switch_to_it((By.XPATH, self.col_iframe_xpath)))
                         else:
                             log.warning("{0} 删除失败，失败提示: {0}".format(col_obj, msg))
-                        set_global_var("ResultMsg", msg, False)
+                        gbl.temp.set("ResultMsg", msg)
 
                     else:
                         log.warning("{0} 删除失败，失败提示: {0}".format(col_obj, msg))
-                    set_global_var("ResultMsg", msg, False)
+                    gbl.temp.set("ResultMsg", msg)
                     return
                 else:
                     raise KeyError("操作类型 仅支持添加/修改/删除，当前值: {0}".format(opt_type))
@@ -266,7 +266,7 @@ class NormalModeEData:
                 sleep(1)
             else:
                 log.warning("保存列配置失败，失败提示: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def bind_cmd_info(self, query):
         """

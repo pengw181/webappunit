@@ -9,7 +9,7 @@ from selenium.webdriver.support import expected_conditions as ec
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def cmd_temp_fetch(opt, target_var, var_name, obj_type, result_type, cmd_name, value_type):
@@ -42,7 +42,7 @@ def cmd_temp_fetch(opt, target_var, var_name, obj_type, result_type, cmd_name, v
     }
 
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     page_wait()
     if opt == "添加":
         wait = WebDriverWait(browser, 30)
@@ -99,7 +99,7 @@ def cmd_temp_fetch(opt, target_var, var_name, obj_type, result_type, cmd_name, v
             log.info("保存取数配置成功")
         else:
             log.warning("保存取数配置失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     elif opt == "修改":
         wait = WebDriverWait(browser, 30)
@@ -158,7 +158,7 @@ def cmd_temp_fetch(opt, target_var, var_name, obj_type, result_type, cmd_name, v
             log.info("保存取数配置成功")
         else:
             log.warning("保存取数配置失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     else:
         wait = WebDriverWait(browser, 30)
@@ -181,9 +181,9 @@ def cmd_temp_fetch(opt, target_var, var_name, obj_type, result_type, cmd_name, v
                 log.warning("删除取数配置失败，失败提示: {0}".format(msg))
         else:
             log.warning("删除取数配置失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     # 切换到节点iframe
-    browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+    browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
     # 切换到取数配置iframe
     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[@id='getdata_cmd_templ_node']"))

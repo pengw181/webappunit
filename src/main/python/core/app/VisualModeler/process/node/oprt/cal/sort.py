@@ -6,8 +6,9 @@ from time import sleep
 from selenium.webdriver.common.by import By
 from src.main.python.lib.processVar import choose_var
 from src.main.python.lib.alertBox import BeAlertBox
+from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def sort(input_var, sort_config, output_var, output_col, value_type):
@@ -56,7 +57,7 @@ def sort(input_var, sort_config, output_var, output_col, value_type):
         "赋值方式": "追加"
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 切换到排序运算iframe
     browser.switch_to.frame(
         browser.find_element(By.XPATH, "//iframe[contains(@src,'operateCfgSort.html')]"))
@@ -106,14 +107,11 @@ def sort(input_var, sort_config, output_var, output_col, value_type):
         for e1 in elements:
             if e1.is_displayed():
                 e1.click()
-                elements = browser.find_elements(
-                    By.XPATH, "//*[contains(@id,'valueType') and text()='{0}']".format(value_type))
-                for e2 in elements:
-                    if e2.is_displayed():
-                        e2.click()
-                        log.info("设置赋值方式: {0}".format(value_type))
-                        sleep(1)
-                        break
+                panel_xpath = getPanelXpath()
+                browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(value_type)).click()
+                log.info("设置赋值方式: {0}".format(value_type))
+                sleep(1)
+                break
 
     # 返回到上层iframe
     browser.switch_to.parent_frame()
@@ -154,7 +152,7 @@ def sort_col(action, sorted_col_index, col_index, sort_type):
         }
     ]
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 操作
     if action == "添加":
         browser.find_element(By.XPATH, "//*[@onclick='addSortInfo();']//*[text()='添加']").click()
@@ -206,12 +204,12 @@ def sort_col(action, sorted_col_index, col_index, sort_type):
             log.info("删除排序列成功")
         else:
             log.warning("删除排序列失败，失败提示: {0}".format(msg))
-        set_global_var("resultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
         # 切换到节点iframe
-        browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+        browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
         # 切换到操作配置iframe
-        browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("OptIframe")))
+        browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("OptIframe")))
         # 切换到运算配置iframe
         browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[contains(@src,'operateVar.html')]"))
         # 切换到过滤运算iframe

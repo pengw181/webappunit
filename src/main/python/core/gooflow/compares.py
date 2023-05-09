@@ -12,8 +12,7 @@ from src.main.python.db.SQLHelper import SQLUtil
 from src.main.python.db.mongoDB import MongoDB
 from src.main.python.core.gooflow.codes import saveCode
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
-from src.main.python.conf.loads import schema_config
+from src.main.python.lib.globals import gbl
 
 
 def compare_data(checks):
@@ -26,7 +25,7 @@ def compare_data(checks):
     sleep(3)
 
     if checks:
-        set_global_var("EndTime", datetime.now().strftime('%Y%m%d%H%M%S'), False)
+        gbl.temp.set("EndTime", datetime.now().strftime('%Y%m%d%H%M%S'))
         check_list = checks.split(chr(10))    # 第一次使用换行拆分比对预期结果单元格内容
 
         # 去空行、空格
@@ -58,10 +57,10 @@ def compare_data(checks):
                 data = "|".join(my_list[3:])
 
                 # 自动替换${xx}变量
-                db = replace_global_var(db)
-                table_name = replace_global_var(table_name)
-                log.info("db: {0}, schema: {1}".format(db, schema_config.get(db).get(schema)))
-                data = replace_global_var(data)
+                db = gbl.replace(db)
+                table_name = gbl.replace(table_name)
+                log.info("db: {0}, schema: {1}".format(db, gbl.schema.get(db).get(schema)))
+                data = gbl.replace(data)
                 log.info("data: {}".format(data))
 
                 check_result = check_db_data(db, schema, table_name, data, count)
@@ -74,7 +73,7 @@ def compare_data(checks):
                 # 校验弹出框信息
                 check_result = check_msg(msg=my_list[1])
                 if not check_result:
-                    saveCode("ErrorMsg不匹配，弹出框返回: {}".format(get_global_var("ResultMsg")))
+                    saveCode("ErrorMsg不匹配，弹出框返回: {}".format(gbl.temp.get("ResultMsg")))
                     break
 
             elif compare_item == "CheckDownloadFile":
@@ -88,9 +87,9 @@ def compare_data(checks):
 
             elif compare_item == "CheckFile":
                 # 文件目录管理判断上传文件是否正确
-                if my_list[1] != get_global_var("CheckFileName"):
+                if my_list[1] != gbl.temp.get("CheckFileName"):
                     check_result = False
-                    saveCode("文件名比对失败，实际文件名: {0}".format(get_global_var("CheckFileName")))
+                    saveCode("文件名比对失败，实际文件名: {0}".format(gbl.temp.get("CheckFileName")))
                     break
                 else:
                     check_result = True
@@ -112,26 +111,26 @@ def compare_data(checks):
 
                 schema = db_tmp[-1]
                 db = ".".join(db_tmp[: -1])
-                db = replace_global_var(db)
+                db = gbl.replace(db)
                 # schema = schema_config.get(db).get(schema)
                 # 如果没创建nu，使用sso登录，但sql语句里需要主动加上nu.前缀
                 if schema == "nu":
                     schema = "sso"
-                log.info("db: {0}, schema: {1}".format(db, schema_config.get(db).get(schema)))
+                log.info("db: {0}, schema: {1}".format(db, gbl.schema.get(db).get(schema)))
                 sql = my_list[2]
                 # 自动替换${xx}变量
-                db = replace_global_var(db)
-                sql = replace_global_var(sql)
+                db = gbl.replace(db)
+                sql = gbl.replace(sql)
 
                 sql_util = SQLUtil(db=db, schema=schema)
                 sql_result = sql_util.select(sql)
                 # 将查到的结果，存入全局变量
-                set_global_var(my_list[3].strip(), sql_result, False)
+                gbl.temp.set(my_list[3].strip(), sql_result)
 
             elif compare_item == "UpdateData":
                 # 更新字典数据
-                obj = get_global_var(my_list[1])
-                value = get_global_var(my_list[3])
+                obj = gbl.temp.get(my_list[1])
+                value = gbl.temp.get(my_list[3])
                 data = update_dict_by_path(obj, my_list[2], value)
                 data = str(data)
                 data = data.replace("'", "\"")
@@ -141,7 +140,7 @@ def compare_data(checks):
                 data = data.replace("False", "false")
                 data = data.replace("\"", "\\\"")
                 log.info("数据更新结果: {0}".format(data))
-                set_global_var(my_list[1], data, False)
+                gbl.temp.set(my_list[1], data)
 
             elif compare_item == "GetMongoData":
                 # 从mongodb获取数据
@@ -155,7 +154,7 @@ def compare_data(checks):
                 mongo_db.get_collection(collection=collection)
                 mongo_data = mongo_db.find_with_condition(condition=query, sorted=sort)[-1].get(fetch_id)
                 log.info("从mongodb获取到数据{0}结果: {1}".format(fetch_id, mongo_data))
-                set_global_var(save_var, mongo_data, False)
+                gbl.temp.set(save_var, mongo_data)
 
             else:
                 log.error("非法比对函数: {0}".format(compare_item))

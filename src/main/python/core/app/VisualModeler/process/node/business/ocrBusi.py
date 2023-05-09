@@ -12,7 +12,7 @@ from src.main.python.lib.regular import RegularCube
 from src.main.python.lib.input import set_text_enable_var
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def ocr_business(node_name, storage_set, enable_filter_set, filter_set, advance_set):
@@ -78,7 +78,7 @@ def ocr_business(node_name, storage_set, enable_filter_set, filter_set, advance_
         }
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     log.info("开始配置OCR节点业务配置")
     # 等待页面加载，自动加载节点模式、算法选择
     wait = WebDriverWait(browser, 30)
@@ -215,7 +215,7 @@ def ocr_business(node_name, storage_set, enable_filter_set, filter_set, advance_
         log.info("保存业务配置成功")
     else:
         log.warning("保存业务配置失败，失败提示: {0}".format(msg))
-    set_global_var("ResultMsg", msg, False)
+    gbl.temp.set("ResultMsg", msg)
 
     # 刷新页面，返回画流程图
     browser.refresh()
@@ -229,7 +229,7 @@ def storage_param_set(storage_type, dir_name, ftp, use_var):
     :param ftp: 远程服务器
     :param use_var: 变量引用，是/否
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 存储类型
     if storage_type == "本地":
         log.info("配置本地文件")
@@ -294,7 +294,7 @@ def file_filter(choose_type, file_name, file_type, row_num):
     :param file_type: 文件类型
     :param row_num: 行号
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     num = row_num
     focus_element = browser.find_element(
         By.XPATH, "//*[@id='loadfilepath{0}']//*[contains(text(),'文件') and @class='requireTag']".format(num))
@@ -343,12 +343,12 @@ def file_filter(choose_type, file_name, file_type, row_num):
                 if alert.title_contains("成功"):
                     log.info("保存正则模版成功")
                     # 切换到节点iframe
-                    browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                    browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                     # 切换到业务配置iframe
                     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[@id='busi_node']"))
                 else:
                     log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-                set_global_var("resultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
             else:
                 # 返回上层iframe
                 browser.switch_to.parent_frame()

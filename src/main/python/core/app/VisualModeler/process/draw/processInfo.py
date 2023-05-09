@@ -2,6 +2,7 @@
 # @Author: peng wei
 # @Time: 2021/7/20 下午3:35
 
+import re
 import json
 from time import sleep
 from selenium.webdriver.common.by import By
@@ -14,14 +15,14 @@ from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.lib.dateUtil import set_calendar
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.dateCalculation import calculation
 
 
 class Process:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         DoctorWho().choose_menu("流程编辑器-流程配置")
         page_wait()
         wait = WebDriverWait(self.browser, 30)
@@ -116,7 +117,7 @@ class Process:
         if alert.exist_alert:
             msg = alert.get_msg()
             log.info("弹出框返回: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
             return
         if need_choose:
             if select_item:
@@ -141,8 +142,8 @@ class Process:
         """
         page_wait()
         wait = WebDriverWait(self.browser, 30)
-        wait.until(ec.element_to_be_clickable((By.XPATH, "//*[text()='添加']")))
-        self.browser.find_element(By.XPATH, "//*[text()='添加']").click()
+        wait.until(ec.element_to_be_clickable((By.XPATH, "//*[@funcid='process_add']")))
+        self.browser.find_element(By.XPATH, "//*[@funcid='process_add']").click()
         wait = WebDriverWait(self.browser, 30)
         wait.until(ec.frame_to_be_available_and_switch_to_it((
             By.XPATH, "//iframe[contains(@src,'/VisualModeler/html/gooflow/processInfoEdit.html')]")))
@@ -153,14 +154,14 @@ class Process:
                           process_desc=process_desc, advance_set=advance_set)
 
         # 提交
-        self.browser.find_element(By.XPATH, "//*[text()='提交']").click()
+        self.browser.find_element(By.XPATH, "//*[@iconcls='icon-save']").click()
         alert = BeAlertBox()
         msg = alert.get_msg()
         if alert.title_contains("保存成功"):
             log.info("数据 {0} 添加成功".format(process_name))
         else:
             log.warning("数据 {0} 添加失败，失败提示: {1}".format(process_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def update(self, process, process_name, field, exec_mode, process_desc, advance_set):
         """
@@ -172,7 +173,7 @@ class Process:
         :param advance_set: 高级配置
         """
         self.search(query={"关键字": process}, need_choose=True)
-        self.browser.find_element(By.XPATH, "//*[text()='修改']").click()
+        self.browser.find_element(By.XPATH, "//*[@funcid='process_update']").click()
         wait = WebDriverWait(self.browser, 30)
         wait.until(ec.frame_to_be_available_and_switch_to_it((
             By.XPATH, "//iframe[contains(@src,'/VisualModeler/html/gooflow/processInfoEdit.html')]")))
@@ -183,14 +184,14 @@ class Process:
                           advance_set=advance_set)
 
         # 提交
-        self.browser.find_element(By.XPATH, "//*[text()='提交']").click()
+        self.browser.find_element(By.XPATH, "//*[@iconcls='icon-save']").click()
         alert = BeAlertBox()
         msg = alert.get_msg()
         if alert.title_contains("保存成功"):
             log.info("数据 {0} 修改成功".format(process))
         else:
             log.warning("数据 {0} 修改失败，失败提示: {1}".format(process, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def process_page(self, process_name, field,  process_desc, advance_set, process_type=None, exec_mode=None):
         """
@@ -211,7 +212,7 @@ class Process:
         # 专业领域
         if field:
             self.browser.find_element(
-                By.XPATH, "//*[contains(text(),'专业领域')]/../following-sibling::div[1]/div/span").click()
+                By.XPATH, "//*[@id='temp_type_id']/following-sibling::span//a").click()
             page_wait()
             sleep(1)
             # 判断当前是否已经选择了专业领域，如果是，则先取消
@@ -221,15 +222,12 @@ class Process:
                 for cf in choose_field_list:
                     cf.click()
             # 依次选择专业领域
+            panel_xpath = getPanelXpath()
             for f in field:
-                field_elements = self.browser.find_elements(
-                    By.XPATH, "//*[contains(@id,'temp_type_id') and text()='{0}']".format(f))
-                for element in field_elements:
-                    if element.is_displayed():
-                        element.click()
-                        break
+                self.browser.find_element(
+                    By.XPATH, panel_xpath + "//*[text()='{0}']".format(f)).click()
             self.browser.find_element(
-                By.XPATH, "//*[contains(text(),'专业领域')]/../following-sibling::div[1]/div/span").click()
+                By.XPATH, "//*[@id='temp_type_id']/following-sibling::span//a").click()
             log.info("设置专业领域: {0}".format(",".join(field)))
 
         # 流程类型
@@ -289,24 +287,18 @@ class Process:
         """
 
         # 节点异常终止流程
-        js = 'return $("#isNodeExpEnd")[0].checked;'
-        status = self.browser.execute_script(js)
-        # log.info("【节点异常终止流程】勾选状态: {0}".format(status))
-        # 聚焦元素
-        enable_click = self.browser.find_element(By.XPATH, "//*[@id='isNodeExpEnd']")
-        self.browser.execute_script("arguments[0].scrollIntoView(true);", enable_click)
+        if exception_end:
+            js = 'return $("#isNodeExpEnd")[0].checked;'
+            status = self.browser.execute_script(js)
+            # log.info("【节点异常终止流程】勾选状态: {0}".format(status))
+            # 聚焦元素
+            enable_click = self.browser.find_element(By.XPATH, "//*[@id='isNodeExpEnd']")
+            self.browser.execute_script("arguments[0].scrollIntoView(true);", enable_click)
 
-        if exception_end == "是":
-            # 点击节点异常终止流程
-            if not status:
-                enable_click.click()
-            log.info("勾选【节点异常终止流程】")
-        elif exception_end == "否":
-            if status:
-                enable_click.click()
-            log.info("取消勾选【节点异常终止流程】")
-        else:
-            pass
+            temp = True if exception_end == "是" else False
+            if temp ^ status:
+                self.browser.find_element(By.XPATH, "//*[@id='isNodeExpEnd']").click()
+                log.info("设置节点异常终止流程: {}".format(exception_end))
 
         # 自定义流程变量
         if process_var:
@@ -418,10 +410,7 @@ class Process:
 
             # 删除多余的变量
             elements = self.browser.find_elements(By.XPATH, "//*[contains(@id,'relaCol')]/following-sibling::span/input[2]")
-            if len(elements) == 0:
-                # 当前未配置流程变量
-                pass
-            else:
+            if len(elements) > 0:
                 # 当前有配置流程变量，删除不在参数列表中的变量
                 for element in elements:
                     current_process_var = element.get_attribute("value")
@@ -434,9 +423,7 @@ class Process:
 
             log.info("自定义流程变量配置完成")
         elif enable_status == "关闭":
-            if not status:
-                pass
-            else:
+            if status:
                 self.browser.find_element(By.XPATH, "//*[@id='isProcessVarConfig']").click()
                 log.info("取消勾选【自定义流程变量】")
         else:
@@ -543,7 +530,7 @@ class Process:
 
     def delete(self, process_name):
         self.search(query={"关键字": process_name}, need_choose=True)
-        self.browser.find_element(By.XPATH, "//*[text()='删除']").click()
+        self.browser.find_element(By.XPATH, "//*[@funcid='process_delete']").click()
 
         alert = BeAlertBox(back_iframe=False)
         msg = alert.get_msg()
@@ -558,7 +545,7 @@ class Process:
         else:
             # 无权操作
             log.warning("{0} 删除失败，失败提示: {1}".format(process_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def copy(self, process_name, main_process_name, sub_process_name_list):
         """
@@ -612,78 +599,155 @@ class Process:
             log.info("{0} 复制成功".format(process_name))
         else:
             log.warning("{0} 复制失败，失败提示: {1}".format(process_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
+
+    def approval(self, process_name):
+        """
+        流程提交审批
+        :param process_name: 流程名称
+        """
+        self.search(query={"关键字": process_name}, need_choose=True)
+        self.browser.find_element(By.XPATH, "//*[contains(@class, 'selected')]/*[@field='checkTagText']//a").click()
+        alert = BeAlertBox(timeout=10, back_iframe=False)
+        msg = alert.get_msg()
+        if alert.title_contains("您确定提交该流程审批吗", auto_click_ok=False):
+            alert.click_ok()
+            alert = BeAlertBox(timeout=60, back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("操作成功"):
+                log.info("流程 {} 提交审批成功".format(process_name))
+            else:
+                log.warning("流程 {} 提交审批失败，失败提示: {}".format(process_name, msg))
+        else:
+            log.warning("流程 {} 提交审批失败，失败提示: {}".format(process_name, msg))
+        gbl.temp.set("ResultMsg", msg)
+
+    def set_status(self, process_name, process_status):
+        """
+        流程启用/禁用
+        :param process_name: 流程名称
+        :param process_status: 状态，启用/禁用
+        """
+        self.search(query={"关键字": process_name}, need_choose=True)
+        js = 'return $(".switchbutton")[0].checked;'
+        status = self.browser.execute_script(js)
+        temp = True if process_status == "启用" else False
+        if temp ^ status:
+            self.browser.find_element(
+                By.XPATH, "//*[contains(@class,'selected')]/*[@field='isAlive']//*[@class='switchbutton']").click()
+            alert = BeAlertBox(timeout=60, back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("启用流程成功", auto_click_ok=False):
+                log.info("流程 {} 启用成功".format(process_name))
+            elif alert.title_contains("禁用流程成功"):
+                log.info("流程 {} 禁用成功".format(process_name))
+            else:
+                log.warning("流程 {} {}失败，失败提示: {}".format(process_name, process_status, msg))
+        else:
+            log.info("流程当前状态: {}".format(status))
+            msg = "{}流程成功".format(process_status)
+        gbl.temp.set("ResultMsg", msg)
+
+    def create_task(self, process_name, task_info):
+        """
+        创建任务
+        :param process_name: 流程名称
+        :param task_info: 任务配置
+        """
+        from src.main.python.core.app.VisualModeler.task.taskManage import TaskManage
+        self.search(query={"关键字": process_name}, need_choose=True)
+        self.browser.find_element(By.XPATH, "//*[@funcid='process_task']").click()
+        alert = BeAlertBox(timeout=3, back_iframe=False)
+        if alert.exist_alert:
+            msg = alert.get_msg()
+            if alert.title_contains("该模版已创建任务，是否修改", auto_click_ok=False):
+                # 如果已创建过，则询问是否修改
+                alert.click_ok()
+            else:
+                log.error("创建任务失败，失败提示: {}".format(msg))
+                gbl.temp.set("ResultMsg", msg)
+                return
+
+        wait = WebDriverWait(self.browser, 30)
+        wait.until(ec.frame_to_be_available_and_switch_to_it((
+            By.XPATH, "//iframe[contains(@src, '../naga/taskManConfInfoEdit.html')]")))
+        task = TaskManage(exec_from=False)
+        task_name = task_info.get("任务名称")
+        time_turner = task_info.get("配置定时任务")
+        timing_conf = task_info.get("定时配置")
+        remark = task_info.get("任务说明")
+        task.taskPage(task_name, None, None, time_turner, timing_conf, remark)
+
+        # 提交
+        self.browser.find_element(By.XPATH, "//*[@id='saveBtn']").click()
+        alter = BeAlertBox()
+        msg = alter.get_msg()
+        if alter.title_contains("保存成功"):
+            log.info("任务{0}保存成功".format(task_name))
+        else:
+            log.info("任务{0}保存失败，失败原因: {1}".format(task_name, msg))
+        gbl.temp.set("ResultMsg", msg)
 
     def data_clear(self, process_name, fuzzy_match=False):
         # 用于清除数据，在测试之前执行, 使用process_name开头模糊查询
-        page_wait()
-        wait = WebDriverWait(self.browser, 30)
-        wait.until(ec.element_to_be_clickable((By.XPATH, "//*[@name='keyword']/preceding-sibling::input")))
-        self.browser.find_element(By.XPATH, "//*[@name='keyword']/preceding-sibling::input").clear()
-        self.browser.find_element(By.XPATH, "//*[@name='keyword']/preceding-sibling::input").send_keys(process_name)
-        self.browser.find_element(By.XPATH, "//*[contains(@data-dg-query,'process_info_tab')]//*[text()='查询']").click()
-        page_wait()
+        self.search(query={"关键字": process_name}, need_choose=False)
         if fuzzy_match:
             record_element = self.browser.find_elements(
-                By.XPATH, "//*[@field='processName']/*[contains(@class,'processName')]/*[starts-with(text(),'{0}')]".format(
-                    process_name))
+                By.XPATH, "//*[@field='processName']//*[starts-with(text(),'{0}')]".format(process_name))
         else:
             record_element = self.browser.find_elements(
-                By.XPATH, "//*[@field='processName']/*[contains(@class,'processName')]/*[text()='{0}']".format(process_name))
-        if len(record_element) > 0:
-            log.info("根据名称查到{}条满足条件数据".format(len(record_element)))
-            exist_data = True
-
-            while exist_data:
-                pe = record_element[0]
-                pe.click()
-                search_result = pe.text
-                log.info("选择: {0}".format(search_result))
-                # 删除
-                self.browser.find_element(By.XPATH, "//*[text()='删除']").click()
-                alert = BeAlertBox(back_iframe=False)
-                msg = alert.get_msg()
-                if alert.title_contains("您确定需要删除{0}流程吗".format(search_result), auto_click_ok=False):
-                    alert.click_ok()
-                    # 删除流程是否有子流程被其它流程引用
-                    try:
-                        # 等待页面加载
-                        page_wait()
-                        self.browser.switch_to.frame(
-                            self.browser.find_element(
-                                By.XPATH, "//iframe[contains(@src,'../gooflow/deleteChildProcessInfos.html')]"))
-                        self.browser.find_element(By.XPATH, "//*[@onclick='delProcessAndChilds()']").click()
-                        # # 返回上层iframe
-                        alert = BeAlertBox(timeout=1)
-                        alert.click_ok()
-                    except NoSuchElementException:
-                        pass
-                    finally:
-                        alert = BeAlertBox(timeout=3, back_iframe=False)
-                        msg = alert.get_msg()
-                        if alert.title_contains("成功"):
-                            log.info("{0} 删除成功".format(search_result))
-                            page_wait()
-                            if fuzzy_match:
-                                # 重新获取页面查询结果
-                                record_element = self.browser.find_elements(
-                                    By.XPATH, "//*[@field='processName']/*[contains(@class,'processName')]/*[starts-with(text(),'{0}')]".format(
-                                        process_name))
-                                if len(record_element) > 0:
-                                    exist_data = True
-                                else:
-                                    # 查询结果为空,修改exist_data为False，退出循环
-                                    log.info("数据清理完成")
-                                    exist_data = False
-                            else:
-                                break
-                        else:
-                            raise Exception("删除数据时出现未知异常: {0}".format(msg))
-                else:
-                    # 无权操作
-                    log.warning("{0} 删除失败，失败提示: {1}".format(process_name, msg))
-                    set_global_var("ResultMsg", msg, False)
-
-        else:
+                By.XPATH, "//*[@field='processName']//*[text()='{0}']".format(process_name))
+        if len(record_element) == 0:
             # 查询结果为空,结束处理
             log.info("查询不到满足条件的数据，无需清理")
+            return
+
+        log.info("根据名称查到{}条满足条件数据".format(len(record_element)))
+        exist_data = True
+        while exist_data:
+            pe = record_element[0]
+            pe.click()
+            search_result = pe.text
+            log.info("选择: {0}".format(search_result))
+            # 删除
+            self.browser.find_element(By.XPATH, "//*[@funcid='process_delete']").click()
+            alert = BeAlertBox(back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("您确定需要删除{0}流程吗".format(search_result), auto_click_ok=False):
+                alert.click_ok()
+                # 删除流程是否有子流程被其它流程引用
+                try:
+                    # 等待页面加载
+                    page_wait()
+                    self.browser.switch_to.frame(
+                        self.browser.find_element(
+                            By.XPATH, "//iframe[contains(@src,'../gooflow/deleteChildProcessInfos.html')]"))
+                    self.browser.find_element(By.XPATH, "//*[@onclick='delProcessAndChilds()']").click()
+                    # # 返回上层iframe
+                    alert = BeAlertBox(timeout=1)
+                    alert.click_ok()
+                except NoSuchElementException:
+                    pass
+                finally:
+                    alert = BeAlertBox(timeout=30, back_iframe=False)
+                    msg = alert.get_msg()
+                    if alert.title_contains("成功"):
+                        log.info("{0} 删除成功".format(search_result))
+                        page_wait()
+                        if fuzzy_match:
+                            # 重新获取页面查询结果
+                            record_element = self.browser.find_elements(
+                                By.XPATH, "//*[@field='processName']//*[starts-with(text(),'{0}')]".format(process_name))
+                            if len(record_element) == 0:
+                                # 查询结果为空,修改exist_data为False，退出循环
+                                log.info("数据清理完成")
+                                exist_data = False
+                        else:
+                            break
+                    else:
+                        raise Exception("删除数据时出现未知异常: {0}".format(msg))
+            else:
+                # 无权操作
+                log.warning("{0} 删除失败，失败提示: {1}".format(process_name, msg))
+                gbl.temp.set("ResultMsg", msg)
+                break

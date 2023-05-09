@@ -4,13 +4,12 @@
 
 from selenium.webdriver.common.by import By
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
-from src.main.python.conf.loads import properties
+from src.main.python.lib.globals import gbl
 
 
 def upload(file_name, catalog=None, input_id='filebox_file_id_2'):
-    browser = get_global_var("browser")
-    uploadPath = properties.get("projectBasePath") + properties.get("projectName") + properties.get("uploadPath")
+    browser = gbl.service.get("browser")
+    uploadPath = gbl.service.get("projectMainPath") + '/resources/upload/'
     if not uploadPath.endswith("/"):
         uploadPath += "/"
     if catalog:

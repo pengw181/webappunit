@@ -4,7 +4,7 @@
 
 from time import sleep
 from selenium.common.exceptions import NoSuchElementException
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.tab import TabHandles
 from src.main.python.static.crawler_menu import *
 from src.main.python.lib.logger import log
@@ -29,7 +29,7 @@ def get_menu_xpath(level, menu):
 
 
 def choose_menu(menu_path):
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     menu_list = str(menu_path).split("-")
     first_menu = menu_list[0]
     second_menu = menu_list[1]

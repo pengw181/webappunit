@@ -9,14 +9,14 @@ from selenium.webdriver.support import expected_conditions as ec
 from src.main.python.lib.toast import Toast
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.wrap import Wrap
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
 class EditDashboard:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.xpath = "//*[@data-name='edit-dashboard']"
         page_wait(3)
 
@@ -103,7 +103,7 @@ class EditDashboard:
             log.info("仪表盘保存成功")
         else:
             log.info("仪表盘保存失败，失败原因: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def searchGlobal(self):
         # 查询全局
@@ -134,7 +134,7 @@ class EditDashboard:
         self.browser.find_element(By.XPATH, self.xpath + "//*[text()='保存']").click()
         toast = Toast()
         msg = toast.get_msg()
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def setImageSize(self):
         pass

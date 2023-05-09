@@ -8,8 +8,9 @@ from src.main.python.lib.processVar import choose_var
 from src.main.python.lib.regular import RegularCube
 from src.main.python.lib.input import set_textarea
 from src.main.python.lib.alertBox import BeAlertBox
+from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def section(output_var, input_var, value_type, begin_config, end_config, sample_data):
@@ -57,7 +58,7 @@ def section(output_var, input_var, value_type, begin_config, end_config, sample_
         "样例数据": ["pw 001 test", "pw 002 test", "pw 003 test", "pw 004 test", "pw 005 test"
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 切换到分段拆分运算iframe
     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[contains(@src,'operateCfgSection.html')]"))
 
@@ -80,14 +81,11 @@ def section(output_var, input_var, value_type, begin_config, end_config, sample_
         for e1 in elements:
             if e1.is_displayed():
                 e1.click()
-                elements = browser.find_elements(
-                    By.XPATH, "//*[contains(@id,'valuetype') and text()='{0}']".format(value_type))
-                for e2 in elements:
-                    if e2.is_displayed():
-                        e2.click()
-                        log.info("设置赋值方式: {0}".format(value_type))
-                        sleep(1)
-                        break
+                panel_xpath = getPanelXpath()
+                browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(value_type)).click()
+                log.info("设置赋值方式: {0}".format(value_type))
+                sleep(1)
+                break
 
     # 开始特征行
     if begin_config:
@@ -136,7 +134,7 @@ def begin_sep_set(enable_flag, set_type, regular_name, advance_mode, regular, ex
         "正则模版名称": "pw按时间拆分"
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     js = 'return $("#isBeginRow1")[0].checked;'
     status = browser.execute_script(js)
     log.info("【开始特征行】勾选状态: {0}".format(status))
@@ -158,9 +156,9 @@ def begin_sep_set(enable_flag, set_type, regular_name, advance_mode, regular, ex
             if alert.title_contains("成功"):
                 log.info("保存正则模版成功")
                 # 切换到节点iframe
-                browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                 # 切换到操作配置iframe
-                browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("OptIframe")))
+                browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("OptIframe")))
                 # 切换到运算配置iframe
                 browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[contains(@src,'operateVar.html')]"))
                 # 切换到分段拆分运算iframe
@@ -168,7 +166,7 @@ def begin_sep_set(enable_flag, set_type, regular_name, advance_mode, regular, ex
                     browser.find_element(By.XPATH, "//iframe[contains(@src,'operateCfgSection.html')]"))
             else:
                 log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-            set_global_var("resultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
     else:
         if status:
             # 如果flag为否，但当前已勾选，则再点击一次，取消勾选
@@ -187,7 +185,7 @@ def end_sep_set(enable_flag, set_type, regular_name, advance_mode, regular, expr
     :param regular: 标签配置
     :param expression: 表达式
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     js = 'return $("#isBeginRow2")[0].checked;'
     status = browser.execute_script(js)
     log.info("【结束特征行】勾选状态: {0}".format(status))
@@ -209,9 +207,9 @@ def end_sep_set(enable_flag, set_type, regular_name, advance_mode, regular, expr
             if alert.title_contains("成功"):
                 log.info("保存正则模版成功")
                 # 切换到节点iframe
-                browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                 # 切换到操作配置iframe
-                browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("OptIframe")))
+                browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("OptIframe")))
                 # 切换到运算配置iframe
                 browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[contains(@src,'operateVar.html')]"))
                 # 切换到分段拆分运算iframe
@@ -219,7 +217,7 @@ def end_sep_set(enable_flag, set_type, regular_name, advance_mode, regular, expr
                     browser.find_element(By.XPATH, "//iframe[contains(@src,'operateCfgSection.html')]"))
             else:
                 log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-            set_global_var("resultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     else:
         if status:

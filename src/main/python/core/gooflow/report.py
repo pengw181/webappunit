@@ -7,17 +7,16 @@ import xlwt
 import shutil
 from xlutils.copy import copy
 from datetime import datetime
-from src.main.python.conf.loads import properties
+from src.main.python.lib.globals import gbl
 
 
 class ReportRunner:
 
     def __init__(self):
 
-        base_path = properties.get("projectBasePath") + properties.get("projectName")
         timestamp = datetime.strftime(datetime.now(), "%Y_%m_%d_%H_%M_%S")
-        self.path = base_path + properties.get("reportPath") + "AutoTestReport_" + timestamp + ".xls"
-        template_file_path = base_path + properties.get("reportTempPath") + "AutoTestReport.xls"
+        self.path = gbl.service.get("projectMainPath") + "/reports/output/AutoTestReport_" + timestamp + ".xls"
+        template_file_path = gbl.service.get("projectMainPath") + "/reports/template/AutoTestReport.xls"
 
         # 打开excel，formatting_info=True保留Excel当前格式
         shutil.copy(template_file_path, self.path)

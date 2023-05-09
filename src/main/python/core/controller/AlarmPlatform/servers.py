@@ -11,7 +11,7 @@ from src.main.python.core.app.AlarmPlatform.config.dictionary import Dictionary
 from src.main.python.core.app.AlarmPlatform.config.alarmPlan import AlarmPlan
 from src.main.python.core.app.AlarmPlatform.config.alarmRule import AlarmRule
 from src.main.python.core.app.AlarmPlatform.config.msgTemplate import MsgTemplate
-from src.main.python.core.app.AlarmPlatform.send.plan import SendPlan
+from src.main.python.core.app.AlarmPlatform.send.sendPlan import SendPlan
 
 
 @Wrap(wrap_func='auto_enter_vm')
@@ -30,7 +30,7 @@ def actions(func, param):
     elif func == "UpdateDatabase":
         action = DatabaseConfig()
         update_map = param.get("修改内容")
-        action.update(obj=param.get("数据库名称"), database_type=update_map.get("数据库类型"),
+        action.update(database=param.get("数据库名称"), database_type=update_map.get("数据库类型"),
                       database_name=update_map.get("数据库名称"), database_sid=update_map.get("服务名/SID"),
                       address=update_map.get("连接地址"), port=update_map.get("端口"), username=update_map.get("用户名"),
                       password=update_map.get("密码"))
@@ -49,7 +49,7 @@ def actions(func, param):
     elif func == "UpdateTableBelong":
         action = TableBelong()
         update_map = param.get("修改内容")
-        action.update(obj=param.get("表中文名称"), table_cn_Name=update_map.get("表中文名称"), remark=update_map.get("备注"))
+        action.update(table=param.get("表中文名称"), table_cn_Name=update_map.get("表中文名称"), remark=update_map.get("备注"))
 
     elif func == "DeleteTableBelong":
         action = TableBelong()
@@ -68,7 +68,7 @@ def actions(func, param):
     elif func == "UpdateFTP":
         action = FTP()
         update_map = param.get("修改内容")
-        action.update(obj=param.get("FTP名称"), ftp_name=update_map.get("FTP名称"), host=update_map.get("连接地址"),
+        action.update(ftp=param.get("FTP名称"), ftp_name=update_map.get("FTP名称"), host=update_map.get("连接地址"),
                       port=update_map.get("端口"), username=update_map.get("用户名"), password=update_map.get("密码"))
 
     elif func == "TestFTP":
@@ -94,7 +94,7 @@ def actions(func, param):
     elif func == "UpdateMetaData":
         action = MetaData()
         update_map = param.get("修改内容")
-        action.update(obj=param.get("元数据名称"), metadata_name=update_map.get("元数据名称"),
+        action.update(metadata=param.get("元数据名称"), metadata_name=update_map.get("元数据名称"),
                       data_delay=update_map.get("数据时延"), remark=update_map.get("备注"),
                       prepare_field=update_map.get("待选字段"), selected_field=update_map.get("已选字段"))
 
@@ -116,8 +116,8 @@ def actions(func, param):
     elif func == "UpdateDictionary":
         action = Dictionary()
         update_map = param.get("修改内容")
-        action.update(obj=param.get("字典组名称"), dict_name=update_map.get("字典组名称"), comment=update_map.get("字典描述"),
-                      filter_set=update_map.get("过滤条件"))
+        action.update(dict_group=param.get("字典组名称"), dict_name=update_map.get("字典组名称"),
+                      comment=update_map.get("字典描述"), filter_set=update_map.get("过滤条件"))
 
     elif func == "SetDictionaryDetail":
         action = Dictionary()
@@ -132,7 +132,7 @@ def actions(func, param):
     elif func == "UpdateAlarmPlan":
         action = AlarmPlan()
         update_map = param.get("修改内容")
-        action.update(obj=param.get("告警计划名称"), plan_name=update_map.get("告警计划名称"),
+        action.update(plan=param.get("告警计划名称"), plan_name=update_map.get("告警计划名称"),
                       alarm_type=update_map.get("告警类型"), data_source=update_map.get("数据源名称"),
                       region_tag=update_map.get("标签分类"), domain_tag=update_map.get("领域标签"),
                       plan_desc=update_map.get("计划描述"))
@@ -167,25 +167,25 @@ def actions(func, param):
     elif func == "UpdateAlarmRule":
         action = AlarmRule()
         update_map = param.get("修改内容")
-        action.update(obj=param.get("规则名称"), basic_conf=update_map.get("基本信息配置"),
+        action.update(rule=param.get("告警规则名称"), basic_conf=update_map.get("基本信息配置"),
                       dimension_conf=update_map.get("告警维度配置"), filter_conf=update_map.get("过滤条件配置"),
                       result_conf=update_map.get("告警结果配置"), storage_conf=update_map.get("告警存储配置"))
 
     elif func == "UpdateAlarmRuleStatus":
         action = AlarmRule()
-        action.update_status(rule_name=param.get("规则名称"), set_status=param.get("状态"))
+        action.update_status(rule_name=param.get("告警规则名称"), set_status=param.get("状态"))
 
     elif func == "DeleteAlarmRule":
         action = AlarmRule()
-        action.delete(rule_name=param.get("规则名称"))
+        action.delete(rule_name=param.get("告警规则名称"))
 
     elif func == "RedoAlarmRule":
         action = AlarmRule()
-        action.redo(rule_name=param.get("规则名称"), start_time=param.get("开始时间"), end_time=param.get("结束时间"))
+        action.redo(rule_name=param.get("告警规则名称"), start_time=param.get("开始时间"), end_time=param.get("结束时间"))
 
     elif func == "AlarmRuleDataClear":
         action = AlarmRule()
-        action.data_clear(rule_name=param.get("规则名称"), fuzzy_match=param.get("模糊匹配"))
+        action.data_clear(rule_name=param.get("告警规则名称"), fuzzy_match=param.get("模糊匹配"))
 
     elif func == "BatchEnableRule":
         action = AlarmRule()
@@ -205,7 +205,7 @@ def actions(func, param):
     elif func == "UpdateMsgTemplate":
         action = MsgTemplate()
         update_map = param.get("修改内容")
-        action.update(obj=param.get("消息模版名称"), msg_temp_name=update_map.get("消息模版名称"),
+        action.update(template=param.get("消息模版名称"), msg_temp_name=update_map.get("消息模版名称"),
                       title=update_map.get("模版标题"), remark=update_map.get("消息模版描述"),
                       config_model=update_map.get("配置模式"), result_tag=update_map.get("结果标签"),
                       tag_config=update_map.get("模版配置"), input_template=update_map.get("模版输入"))
@@ -245,7 +245,7 @@ def actions(func, param):
     elif func == "UpdateSendPlan":
         action = SendPlan()
         update_map = param.get("修改内容")
-        action.update(obj=param.get("推送计划名称"), plan_name=update_map.get("推送计划名称"), send_type=update_map.get("推送类型"),
+        action.update(plan=param.get("推送计划名称"), plan_name=update_map.get("推送计划名称"), send_type=update_map.get("推送类型"),
                       msg_template=update_map.get("消息模版"), receiver=update_map.get("接收对象"),
                       send_date=update_map.get("推送日期"), effect_start_date=update_map.get("有效开始日期"),
                       effect_end_date=update_map.get("有效结束日期"), send_start_time=update_map.get("有效开始时段"),

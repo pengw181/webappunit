@@ -10,7 +10,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.core.app.Crawler.menu import choose_menu
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.alertBox import BeAlertBox
@@ -22,7 +22,7 @@ from src.main.python.core.app.VisualModeler.process.node.oprt.calculation import
 class CrawlerTemplate:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         # 进入菜单
         choose_menu("配置-爬虫模版")
         page_wait()
@@ -114,8 +114,7 @@ class CrawlerTemplate:
             log.info("保存模版配置成功")
         else:
             log.warn("保存模版配置失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
-        return True
+        gbl.temp.set("ResultMsg", msg)
 
     def update(self, obj, template_name, system_name, advance_set):
         """
@@ -129,7 +128,8 @@ class CrawlerTemplate:
         alert = BeAlertBox(back_iframe=False, timeout=1)
         exist = alert.exist_alert
         if exist:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             # 切换到修改爬虫模版页面iframe
             wait = WebDriverWait(self.browser, 30)
@@ -194,7 +194,7 @@ class CrawlerTemplate:
                 log.info("保存模版配置成功")
             else:
                 log.warn("保存模版配置失败，失败提示: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def delete(self, obj):
         """
@@ -215,7 +215,7 @@ class CrawlerTemplate:
                 log.warn("{0} 删除失败，失败提示: {1}".format(obj, msg))
         else:
             log.warn("{0} 删除失败，失败提示: {1}".format(obj, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def element_config(self, template_name, element_config):
         """
@@ -227,7 +227,8 @@ class CrawlerTemplate:
         alert = BeAlertBox(back_iframe=False, timeout=1)
         exist = alert.exist_alert
         if exist:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             # 切换到修改爬虫模版页面iframe
             wait = WebDriverWait(self.browser, 30)
@@ -251,7 +252,8 @@ class CrawlerTemplate:
         alert = BeAlertBox(back_iframe=False, timeout=1)
         exist = alert.exist_alert
         if exist:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             # 切换到修改爬虫模版页面iframe
             wait = WebDriverWait(self.browser, 30)
@@ -355,46 +357,44 @@ class CrawlerTemplate:
         else:
             record_element = self.browser.find_elements_by_xpath(
                 "//*[@field='templateName']/*[contains(@class,'templateName')]/*[text()='{0}']".format(obj))
-        if len(record_element) > 0:
-            exist_data = True
-
-            while exist_data:
-                pe = record_element[0]
-                search_result = pe.text
-                pe.click()
-                log.info("选择: {0}".format(search_result))
-                # 删除
-                self.browser.find_element_by_xpath("//*[text()='删除']").click()
-                alert = BeAlertBox(back_iframe="default")
-                msg = alert.get_msg()
-                if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
-                    alert.click_ok()
-                    alert = BeAlertBox(back_iframe=False)
-                    msg = alert.get_msg()
-                    if alert.title_contains("成功"):
-                        log.info("{0} 删除成功".format(search_result))
-                        page_wait()
-                        if fuzzy_match:
-                            # 重新获取页面查询结果
-                            record_element = self.browser.find_elements_by_xpath(
-                                "//*[@field='templateName']/*[contains(@class,'templateName')]/*[starts-with(text(),'{0}')]".format(
-                                    obj))
-                            if len(record_element) > 0:
-                                exist_data = True
-                            else:
-                                # 查询结果为空,修改exist_data为False，退出循环
-                                log.info("数据清理完成")
-                                exist_data = False
-                        else:
-                            break
-                    else:
-                        raise Exception("删除数据时出现未知异常: {0}".format(msg))
-                else:
-                    # 无权操作
-                    log.warn("{0} 清理失败，失败提示: {1}".format(obj, msg))
-                    set_global_var("ResultMsg", msg, False)
-
-        else:
+        if len(record_element) == 0:
             # 查询结果为空,结束处理
             log.info("查询不到满足条件的数据，无需清理")
-            pass
+            return
+
+        exist_data = True
+        while exist_data:
+            pe = record_element[0]
+            search_result = pe.text
+            pe.click()
+            log.info("选择: {0}".format(search_result))
+            # 删除
+            self.browser.find_element_by_xpath("//*[text()='删除']").click()
+            alert = BeAlertBox(back_iframe="default")
+            msg = alert.get_msg()
+            if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
+                alert.click_ok()
+                alert = BeAlertBox(back_iframe=False)
+                msg = alert.get_msg()
+                if alert.title_contains("成功"):
+                    log.info("{0} 删除成功".format(search_result))
+                    page_wait()
+                    if fuzzy_match:
+                        # 重新获取页面查询结果
+                        record_element = self.browser.find_elements_by_xpath(
+                            "//*[@field='templateName']/*[contains(@class,'templateName')]/*[starts-with(text(),'{0}')]".format(
+                                obj))
+                        if len(record_element) > 0:
+                            exist_data = True
+                        else:
+                            # 查询结果为空,修改exist_data为False，退出循环
+                            log.info("数据清理完成")
+                            exist_data = False
+                    else:
+                        break
+                else:
+                    raise Exception("删除数据时出现未知异常: {0}".format(msg))
+            else:
+                # 无权操作
+                log.warn("{0} 清理失败，失败提示: {1}".format(obj, msg))
+                gbl.temp.set("ResultMsg", msg)

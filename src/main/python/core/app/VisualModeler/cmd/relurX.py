@@ -2,6 +2,7 @@
 # @Author: peng wei
 # @Time: 2021/9/17 下午4:56
 
+import json
 from time import sleep
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -18,14 +19,15 @@ from src.main.python.lib.regular import RegularCube
 from src.main.python.lib.pagination import Pagination
 from src.main.python.lib.level import choose_level
 from src.main.python.core.app.VisualModeler.cmd.tplVar import VarEditor
+from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class RulerX:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         DoctorWho().choose_menu("指令配置-通用指令解析配置")
         page_wait()
         self.ruler_main_iframe_xpath = "//iframe[contains(@src, '/VisualModeler/html/rulerx/rulerxTmpl.html')]"
@@ -38,23 +40,85 @@ class RulerX:
         self.judge_type = None
         sleep(1)
 
-    def choose(self, analyzer_name):
+    def search(self, query, need_choose=False):
         """
-        :param analyzer_name: 解析模版名称
+        :param query: 查询条件，字典
+        :param need_choose: True/False
         """
-        try:
-            self.browser.find_element(By.XPATH, "//*[@id='keyword']/following-sibling::span[1]/input[1]").clear()
+        if not isinstance(query, dict):
+            raise TypeError("查询条件需要是字典格式")
+        log.info("查询条件: {0}".format(json.dumps(query, ensure_ascii=False)))
+        select_item = None
+
+        # 关键字
+        if query.__contains__("关键字"):
+            keyword = query.get("关键字")
+            self.browser.find_element(By.XPATH, "//*[@id='keyword']/following-sibling::span/input[1]").clear()
             self.browser.find_element(
-                By.XPATH, "//*[@id='keyword']/following-sibling::span[1]/input[1]").send_keys(analyzer_name)
-            page_wait()
-            self.browser.find_element(By.XPATH, "//*[@id='rulerxTmpl-query']").click()
-            page_wait()
-            self.browser.find_element(
-                By.XPATH, "//*[@field='analyzerName']/*[contains(@class,'analyzerName')]/*[text()='{}']".format(
-                    analyzer_name)).click()
-            log.info("选择解析模版：{0}".format(analyzer_name))
-        except NoSuchElementException:
-            log.error("所选解析模版不存在, 解析模版名称: {0}".format(analyzer_name))
+                By.XPATH, "//*[@id='keyword']/following-sibling::span/input[1]").send_keys(keyword)
+            select_item = keyword
+
+        # 模版状态
+        if query.__contains__("模版状态"):
+            analyzer_status = query.get("模版状态")
+            self.browser.find_element(By.XPATH, "//*[@id='analyzerStatus']/following-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(analyzer_status)).click()
+
+        # 解析规则
+        if query.__contains__("解析规则"):
+            rule_type = query.get("解析规则")
+            self.browser.find_element(By.XPATH, "//*[@id='rulerIndex']/following-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(rule_type)).click()
+
+        # 模版来源
+        if query.__contains__("模版来源"):
+            rule_from = query.get("模版来源")
+            self.browser.find_element(By.XPATH, "//*[@id='isDown']/following-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(rule_from)).click()
+
+        # 网元分类
+        if query.__contains__("网元分类"):
+            level = query.get("网元分类")
+            self.browser.find_element(By.XPATH, "//*[@id='level']/following-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(level)).click()
+
+        # 厂家
+        if query.__contains__("厂家"):
+            vendor = query.get("厂家")
+            self.browser.find_element(By.XPATH, "//*[@id='vendor']/following-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(vendor)).click()
+
+        # 设备型号
+        if query.__contains__("设备型号"):
+            model = query.get("设备型号")
+            self.browser.find_element(By.XPATH, "//*[@id='netunitModel']/following-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(model)).click()
+
+        # 查询
+        self.browser.find_element(By.XPATH, "//*[@id='rulerxTmpl-query']").click()
+        page_wait()
+        alert = BeAlertBox(timeout=1, back_iframe=False)
+        if alert.exist_alert:
+            msg = alert.get_msg()
+            log.info("弹出框返回: {0}".format(msg))
+            gbl.temp.set("ResultMsg", msg)
+            return
+        if need_choose:
+            if select_item:
+                try:
+                    self.browser.find_element(
+                        By.XPATH, "//*[@field='analyzerName']/*[text()='{0}']".format(select_item)).click()
+                except NoSuchElementException:
+                    raise KeyError("未找到匹配数据")
+                log.info("选择: {0}".format(select_item))
+            else:
+                raise KeyError("条件不足，无法选择数据")
 
     def add(self, basic_cfg, result_format_cfg, segment_cfg, format_table_cfg, judge_type, judge_cfg):
         """
@@ -128,7 +192,7 @@ class RulerX:
         """
         page_wait()
         wait = WebDriverWait(self.browser, 30)
-        wait.until(ec.element_to_be_clickable((By.XPATH, "//*[text()='添加']")))
+        wait.until(ec.element_to_be_clickable((By.XPATH, "//*[@id='rulerxTmpl-add']")))
         self.browser.find_element(By.XPATH, "//*[@id='rulerxTmpl-add']").click()
         # 进入解析模版配置详情页面
         wait = WebDriverWait(self.browser, 30)
@@ -142,7 +206,7 @@ class RulerX:
         if basic_cfg:
             self.step_basic_info(analyzer_name=basic_cfg.get("模版名称"), remark=basic_cfg.get("模版说明"))
         # 点击下一步
-        self.browser.find_element(By.XPATH, "//*[text()='下一步']").click()
+        self.browser.find_element(By.XPATH, "//*[contains(@data-i18n-text,'nextStep')]").click()
         page_wait(timeout=3)
 
         # 结果格式化配置
@@ -150,7 +214,7 @@ class RulerX:
             self.step_result_format(enable_segment=result_format_cfg.get("分段"),
                                     enable_format_table=result_format_cfg.get("格式化成二维表"))
         # 点击下一步
-        self.browser.find_element(By.XPATH, "//*[text()='下一步']").click()
+        self.browser.find_element(By.XPATH, "//*[contains(@data-i18n-text,'nextStep')]").click()
         page_wait(timeout=3)
 
         # 分段规则配置
@@ -158,7 +222,7 @@ class RulerX:
             self.step_segment(regexp_start=segment_cfg.get("段开始特征行"), regexp_end=segment_cfg.get("段结束特征行"),
                               sample=segment_cfg.get("样例数据"), extract_header=segment_cfg.get("抽取头部字段"))
             # 点击下一步
-            self.browser.find_element(By.XPATH, "//*[text()='下一步']").click()
+            self.browser.find_element(By.XPATH, "//*[contains(@data-i18n-text,'nextStep')]").click()
             page_wait(timeout=3)
 
         # 格式化二维表配置
@@ -168,7 +232,7 @@ class RulerX:
                                    split_tag=format_table_cfg.get("列分隔符"), magic=format_table_cfg.get("正则魔方"),
                                    sample=format_table_cfg.get("样例数据"))
             # 点击下一步
-            self.browser.find_element(By.XPATH, "//*[text()='下一步']").click()
+            self.browser.find_element(By.XPATH, "//*[contains(@data-i18n-text,'nextStep')]").click()
             page_wait(timeout=3)
 
         # 选择判断规则
@@ -177,7 +241,7 @@ class RulerX:
             self.step_choose_judge_type(judge_type=judge_type)
             self.judge_type = judge_type
         # 点击下一步
-        self.browser.find_element(By.XPATH, "//*[text()='下一步']").click()
+        self.browser.find_element(By.XPATH, "//*[contains(@data-i18n-text,'nextStep')]").click()
         page_wait(timeout=3)
 
         # 判断规则配置
@@ -191,14 +255,14 @@ class RulerX:
                                 ruler_conf=judge_cfg.get("规则管理"), issuing_cmd=judge_cfg.get("下发指令"),
                                 sample=judge_cfg.get("样例数据"))
         # 点击完成
-        self.browser.find_element(By.XPATH, "//*[text()='完成']").click()
+        self.browser.find_element(By.XPATH, "//*[contains(@data-i18n-text,'finish')]").click()
         alert = BeAlertBox(timeout=5)
         msg = alert.get_msg()
         if alert.title_contains("向导配置完成"):
             log.info("解析模版【{0}】配置完成".format(self.analysis_name))
         else:
             log.warning("解析模版【{0}】配置失败，失败提示: {1}".format(self.analysis_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def step_basic_info(self, analyzer_name, remark):
         """
@@ -303,7 +367,7 @@ class RulerX:
                         By.XPATH, "//iframe[contains(@src,'/VisualModeler/frame/regexcube/regexpTmplPopUpWin.html')]")))
                 else:
                     log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
 
             # 点击确定关闭正则魔方配置
             self.browser.find_element(By.XPATH, "//*[@id='regexp-ok']").click()
@@ -342,7 +406,7 @@ class RulerX:
                         "//iframe[contains(@src,'/VisualModeler/frame/regexcube/regexpTmplPopUpWin.html')]")))
                 else:
                     log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
 
             # 点击确定关闭正则魔方配置
             self.browser.find_element(By.XPATH, "//*[@id='regexp-ok']").click()
@@ -394,7 +458,7 @@ class RulerX:
                     self.browser.find_element(By.XPATH, "//iframe[contains(@src,'rulerxTmplEditWin.html')]"))
             else:
                 log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
         # 样例数据
         if sample:
@@ -620,13 +684,10 @@ class RulerX:
         # 条件满足时
         if when_matched:
             self.browser.find_element(By.XPATH, "//*[contains(@class,'meetResult')]/following-sibling::span//a").click()
-            elements = self.browser.find_elements(
-                By.XPATH, "//*[contains(@id,'_combobox_') and text()='{}']".format(when_matched))
-            for element in elements:
-                if element.is_displayed():
-                    element.click()
-                    log.info("条件满足时选择: {0}".format(when_matched))
-                    break
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(
+                By.XPATH, panel_xpath + "//*[text()='{}']".format(when_matched)).click()
+            log.info("条件满足时选择: {0}".format(when_matched))
 
         # 异常提示信息
         if unmeet_desc:
@@ -785,7 +846,8 @@ class RulerX:
                                 By.XPATH, "//iframe[contains(@src,'rulerxTmplEditWin.html')]")))
                         else:
                             log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-                        set_global_var("resultMsg", msg, False)
+                        gbl.temp.set("ResultMsg", msg)
+                        return
 
                 # 划动页面
                 move_element = self.browser.find_element(
@@ -796,15 +858,10 @@ class RulerX:
                 if value_type:
                     self.browser.find_element(
                         By.XPATH, key_xpath + "//*[contains(@class,'valueType')]/following-sibling::span//a").click()
-                    value_type_elements = self.browser.find_elements(
-                        By.XPATH, "//*[contains(@id,'_combobox_') and text()='{0}']".format(value_type))
-                    if len(value_type_elements) == 0:
-                        raise NoSuchElementException
-                    for element in value_type_elements:
-                        if element.is_displayed():
-                            element.click()
-                            log.info("取值选择: {0}".format(value_type))
-                            break
+                    panel_xpath = getPanelXpath()
+                    self.browser.find_element(
+                        By.XPATH, panel_xpath + "//*[text()='{0}']".format(value_type)).click()
+                    log.info("取值选择: {0}".format(value_type))
 
                 # 将结果转成16进制
                 if is_hex:
@@ -903,15 +960,9 @@ class RulerX:
         # 条件
         if compare:
             self.browser.find_element(By.XPATH, "//*[contains(@class,'compare')]/following-sibling::span//a").click()
-            compare_elements = self.browser.find_elements(
-                By.XPATH, "//*[contains(@id,'_combobox_') and text()='{0}']".format(compare))
-            if len(compare_elements) == 0:
-                raise NoSuchElementException
-            for element in compare_elements:
-                if element.is_displayed():
-                    element.click()
-                    log.info("选择: {0}".format(compare))
-                    break
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(compare)).click()
+            log.info("选择: {0}".format(compare))
 
         # 行数
         if rows:
@@ -932,13 +983,9 @@ class RulerX:
         if when_matched:
             self.browser.find_element(
                 By.XPATH, "//*[contains(@class,'meetResult')]/following-sibling::span//a").click()
-            elements = self.browser.find_elements(
-                By.XPATH, "//*[contains(@id,'_combobox_') and text()='{}']".format(when_matched))
-            for element in elements:
-                if element.is_displayed():
-                    element.click()
-                    log.info("条件满足时选择: {0}".format(when_matched))
-                    break
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{}']".format(when_matched)).click()
+            log.info("条件满足时选择: {0}".format(when_matched))
 
         # 异常提示信息
         if unmeet_desc:
@@ -1090,7 +1137,7 @@ class RulerX:
                 log.warning("指令下发失败，失败提示: {0}".format(msg))
         else:
             log.warning("指令下发失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def ruler(self, left_value, relation, right_value, row_num, when_matched, when_not_matched, error_tips):
         """
@@ -1110,33 +1157,28 @@ class RulerX:
         if left_value:
             self.browser.find_element(
                 By.XPATH, parent_ruler_xpath + "//*[contains(@class,'leftValue')]/following-sibling::span//a").click()
-            elements = self.browser.find_elements(
-                By.XPATH, "//*[contains(@id,'_combobox_') and text()='{}']".format(left_value))
-            for element in elements:
-                if element.is_displayed():
-                    element.click()
-                    log.info("规则{0}选择列名: {1}".format(row_num, left_value))
-                    break
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{}']".format(left_value)).click()
+            log.info("规则{0}选择列名: {1}".format(row_num, left_value))
 
         # 关系
         if relation:
             self.browser.find_element(
                 By.XPATH, parent_ruler_xpath + "//*[contains(@class,'operator')]/following-sibling::span//a").click()
-            elements = self.browser.find_elements(
-                By.XPATH, "//*[contains(@id,'_combobox_') and text()='{}']".format(relation))
-            for element in elements:
-                if element.is_displayed():
-                    element.click()
-                    log.info("规则{0}选择关系: {1}".format(row_num, relation))
-                    break
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(
+                By.XPATH, panel_xpath + "//*[contains(@id,'_combobox_') and text()='{}']".format(relation)).click()
+            log.info("规则{0}选择关系: {1}".format(row_num, relation))
 
         # 匹配值
         if right_value:
             self.browser.find_element(
                 By.XPATH, parent_ruler_xpath + "//*[contains(@class,'rightValue')]/following-sibling::span//a").click()
-            elements = self.browser.find_elements(
-                By.XPATH, "//*[contains(@id,'_combobox_') and text()='{}']".format(right_value))
-            if len(elements) == 0:
+            panel_xpath = getPanelXpath()
+            try:
+                self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{}']".format(right_value)).click()
+                log.info("规则{0}选择匹配值: {1}".format(row_num, right_value))
+            except NoSuchElementException:
                 # 如果下拉框没有预期的值，则在输入框手动输入
                 self.browser.find_element(
                     By.XPATH, parent_ruler_xpath + "//*[contains(@class,'rightValue')]/following-sibling::span//a").click()
@@ -1146,36 +1188,22 @@ class RulerX:
                     By.XPATH, parent_ruler_xpath + "//*[contains(@class,'rightValue')]/following-sibling::span/input[1]").send_keys(
                     right_value)
                 log.info("规则{0}输入匹配值: {1}".format(row_num, right_value))
-            else:
-                for element in elements:
-                    if element.is_displayed():
-                        element.click()
-                        log.info("规则{0}选择匹配值: {1}".format(row_num, right_value))
-                        break
 
         # 条件满足时
         if when_matched:
             self.browser.find_element(
                 By.XPATH, parent_ruler_xpath + "//*[contains(@class,'meetResult')]/following-sibling::span//a").click()
-            elements = self.browser.find_elements(
-                By.XPATH, "//*[contains(@id,'_combobox_') and text()='{}']".format(when_matched))
-            for element in elements:
-                if element.is_displayed():
-                    element.click()
-                    log.info("规则{0}选择条件满足时: {1}".format(row_num, when_matched))
-                    break
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{}']".format(when_matched)).click()
+            log.info("规则{0}选择条件满足时: {1}".format(row_num, when_matched))
 
         # 匹配不到值时
         if when_not_matched:
             self.browser.find_element(
                 By.XPATH, parent_ruler_xpath + "//*[contains(@class,'unFoundResult')]/following-sibling::span//a").click()
-            elements = self.browser.find_elements(
-                By.XPATH, "//*[contains(@id,'_combobox_') and text()='{}']".format(when_not_matched))
-            for element in elements:
-                if element.is_displayed():
-                    element.click()
-                    log.info("规则{0}选择匹配不到值时: {1}".format(row_num, when_not_matched))
-                    break
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{}']".format(when_not_matched)).click()
+            log.info("规则{0}选择匹配不到值时: {1}".format(row_num, when_not_matched))
 
         # 异常提示信息
         if error_tips:
@@ -1196,60 +1224,51 @@ class RulerX:
         :param fuzzy_match: 模糊匹配
         """
         # 用于清除数据，在测试之前执行, 使用关键字开头模糊查询
-        wait = WebDriverWait(self.browser, 30)
-        wait.until(ec.element_to_be_clickable((By.XPATH, "//*[@id='keyword']/following-sibling::span/input[1]")))
-        self.browser.find_element(By.XPATH, "//*[@id='keyword']/following-sibling::span/input[1]").clear()
-        self.browser.find_element(By.XPATH, "//*[@id='keyword']/following-sibling::span/input[1]").send_keys(analyzer_name)
-        self.browser.find_element(By.XPATH, "//*[@id='rulerxTmpl-query']").click()
-        page_wait()
+        self.search(query={"关键字": analyzer_name}, need_choose=False)
         fuzzy_match = True if fuzzy_match == "是" else False
-        sleep(1)
         if fuzzy_match:
             record_element = self.browser.find_elements(
                 By.XPATH, "//*[@field='analyzerName']//*[starts-with(@data-mtips,'{0}')]".format(analyzer_name))
         else:
             record_element = self.browser.find_elements(
                 By.XPATH, "//*[@field='analyzerName']//*[@data-mtips='{0}']".format(analyzer_name))
-        if len(record_element) > 0:
-            exist_data = True
-
-            while exist_data:
-                pe = record_element[0]
-                js = 'return $(".rulerxTmplTab_datagrid-cell-c1-analyzerName")[1].innerText;'
-                search_result = self.browser.execute_script(js)
-                pe.click()
-                log.info("选择: {0}".format(search_result))
-                # 删除
-                self.browser.find_element(By.XPATH, "//*[@id='rulerxTmpl-del']").click()
-                alert = BeAlertBox(back_iframe=False)
-                msg = alert.get_msg()
-                if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
-                    alert.click_ok()
-                    alert = BeAlertBox(back_iframe=False)
-                    msg = alert.get_msg()
-                    if alert.title_contains("成功"):
-                        log.info("{0} 删除成功".format(search_result))
-                        page_wait()
-                        if fuzzy_match:
-                            # 重新获取页面查询结果
-                            record_element = self.browser.find_elements(
-                                By.XPATH, "//*[@field='analyzerName']//*[starts-with(@data-mtips,'{0}')]".format(
-                                    analyzer_name))
-                            if len(record_element) > 0:
-                                exist_data = True
-                            else:
-                                # 查询结果为空,修改exist_data为False，退出循环
-                                log.info("数据清理完成")
-                                exist_data = False
-                        else:
-                            break
-                    else:
-                        raise Exception("删除数据时出现未知异常: {0}".format(msg))
-                else:
-                    # 无权操作
-                    log.warning("{0} 删除失败，失败提示: {1}".format(analyzer_name, msg))
-                    set_global_var("ResultMsg", msg, False)
-                    break
-        else:
+        if len(record_element) == 0:
             # 查询结果为空,结束处理
             log.info("查询不到满足条件的数据，无需清理")
+            return
+
+        exist_data = True
+        while exist_data:
+            pe = record_element[0]
+            js = 'return $(".rulerxTmplTab_datagrid-cell-c1-analyzerName")[1].innerText;'
+            search_result = self.browser.execute_script(js)
+            pe.click()
+            log.info("选择: {0}".format(search_result))
+            # 删除
+            self.browser.find_element(By.XPATH, "//*[@id='rulerxTmpl-del']").click()
+            alert = BeAlertBox(back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
+                alert.click_ok()
+                alert = BeAlertBox(back_iframe=False)
+                msg = alert.get_msg()
+                if alert.title_contains("成功"):
+                    log.info("{0} 删除成功".format(search_result))
+                    page_wait()
+                    if fuzzy_match:
+                        # 重新获取页面查询结果
+                        record_element = self.browser.find_elements(
+                            By.XPATH, "//*[@field='analyzerName']//*[starts-with(@data-mtips,'{0}')]".format(analyzer_name))
+                        if len(record_element) == 0:
+                            # 查询结果为空,修改exist_data为False，退出循环
+                            log.info("数据清理完成")
+                            exist_data = False
+                    else:
+                        break
+                else:
+                    raise Exception("删除数据时出现未知异常: {0}".format(msg))
+            else:
+                # 无权操作
+                log.warning("{0} 删除失败，失败提示: {1}".format(analyzer_name, msg))
+                gbl.temp.set("ResultMsg", msg)
+                break

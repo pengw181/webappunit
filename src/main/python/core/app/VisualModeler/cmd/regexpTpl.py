@@ -2,6 +2,7 @@
 # @Author: peng wei
 # @Time: 2021/9/17 下午4:56
 
+import json
 from time import sleep
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -12,14 +13,15 @@ from src.main.python.lib.regular import RegularCube
 from src.main.python.lib.input import set_textarea
 from src.main.python.core.app.VisualModeler.doctorWho import DoctorWho
 from src.main.python.lib.pageMaskWait import page_wait
+from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class RegexpTemplate:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         DoctorWho().choose_menu("指令配置-正则模版管理")
         page_wait()
         wait = WebDriverWait(self.browser, 30)
@@ -30,22 +32,57 @@ class RegexpTemplate:
         page_wait()
         sleep(1)
 
-    def choose(self, regexp_name):
+    def search(self, query, need_choose=False):
         """
-        :param regexp_name: 正则模版名称
+        :param query: 查询条件，字典
+        :param need_choose: True/False
         """
-        try:
-            self.browser.find_element(By.XPATH, "//*[@name='keyword']/preceding-sibling::input").clear()
-            self.browser.find_element(By.XPATH, "//*[@name='keyword']/preceding-sibling::input").send_keys(regexp_name)
-            page_wait()
-            self.browser.find_element(By.XPATH, "//*[@id='regexp-query']//*[text()='查询']").click()
-            page_wait()
+        if not isinstance(query, dict):
+            raise TypeError("查询条件需要是字典格式")
+        log.info("查询条件: {0}".format(json.dumps(query, ensure_ascii=False)))
+        select_item = None
+
+        # 关键字
+        if query.__contains__("关键字"):
+            keyword = query.get("关键字")
+            self.browser.find_element(By.XPATH, "//*[@id='keyword']/following-sibling::span/input[1]").clear()
             self.browser.find_element(
-                By.XPATH, "//*[@field='regxTemplName']/*[contains(@class,'regxTemplName')]/*[text()='{}']".format(
-                    regexp_name)).click()
-            log.info("选择正则模版：{0}".format(regexp_name))
-        except NoSuchElementException:
-            log.error("所选正则模版不存在, 正则模版名称: {0}".format(regexp_name))
+                By.XPATH, "//*[@id='keyword']/following-sibling::span/input[1]").send_keys(keyword)
+            select_item = keyword
+
+        # 自动生成
+        if query.__contains__("自动生成"):
+            auto_gen = query.get("自动生成")
+            self.browser.find_element(By.XPATH, "//*[@id='isAutoGen']/following-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(auto_gen)).click()
+
+        # 模版来源
+        if query.__contains__("模版来源"):
+            temp_from = query.get("模版来源")
+            self.browser.find_element(By.XPATH, "//*[@id='expDown']/following-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(temp_from)).click()
+
+        # 查询
+        self.browser.find_element(By.XPATH, "//*[@id='regexp-query']").click()
+        page_wait()
+        alert = BeAlertBox(timeout=1, back_iframe=False)
+        if alert.exist_alert:
+            msg = alert.get_msg()
+            log.info("弹出框返回: {0}".format(msg))
+            gbl.temp.set("ResultMsg", msg)
+            return
+        if need_choose:
+            if select_item:
+                try:
+                    self.browser.find_element(
+                        By.XPATH, "//*[@field='regxTemplName']/*[text()='{0}']".format(select_item)).click()
+                except NoSuchElementException:
+                    raise KeyError("未找到匹配数据")
+                log.info("选择: {0}".format(select_item))
+            else:
+                raise KeyError("条件不足，无法选择数据")
 
     def add(self, regexp_name, remark, regexp_info):
         """
@@ -113,8 +150,8 @@ class RegexpTemplate:
         """
         page_wait()
         wait = WebDriverWait(self.browser, 30)
-        wait.until(ec.element_to_be_clickable((By.XPATH, "//*[text()='添加']")))
-        self.browser.find_element(By.XPATH, "//*[text()='添加']").click()
+        wait.until(ec.element_to_be_clickable((By.XPATH, "//*[@id='regexp-add']")))
+        self.browser.find_element(By.XPATH, "//*[@id='regexp-add']").click()
         wait = WebDriverWait(self.browser, 30)
         wait.until(ec.frame_to_be_available_and_switch_to_it((
             By.XPATH, "//iframe[contains(@src,'regexpTmplEditWin.html')]")))
@@ -124,24 +161,24 @@ class RegexpTemplate:
         self.regexp_page(regexp_name=regexp_name, remark=remark, regexp_info=regexp_info)
 
         # 提交
-        self.browser.find_element(By.XPATH, "//*[text()='提交']").click()
+        self.browser.find_element(By.XPATH, "//*[@id='regex-save']").click()
         alert = BeAlertBox()
         msg = alert.get_msg()
         if alert.title_contains("保存成功"):
             log.info("数据 {0} 添加成功".format(regexp_name))
         else:
             log.warning("数据 {0} 添加失败，失败提示: {1}".format(regexp_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
-    def update(self, obj, regexp_name, remark, regexp_info):
+    def update(self, regexp, regexp_name, remark, regexp_info):
         """
-        :param obj: 正则模版名称
+        :param regexp: 正则模版名称
         :param regexp_name: 正则模版名称
         :param remark: 模版描述
         :param regexp_info: 正则魔方
         """
-        self.choose(obj)
-        self.browser.find_element(By.XPATH, "//*[text()='修改']").click()
+        self.search(query={"关键字": regexp}, need_choose=True)
+        self.browser.find_element(By.XPATH, "//*[@id='regexp-edit']").click()
         wait = WebDriverWait(self.browser, 30)
         wait.until(ec.frame_to_be_available_and_switch_to_it((
             By.XPATH, "//iframe[contains(@src,'regexpTmplEditWin.html')]")))
@@ -157,14 +194,14 @@ class RegexpTemplate:
         self.regexp_page(regexp_name=regexp_name, remark=remark, regexp_info=regexp_info)
 
         # 提交
-        self.browser.find_element(By.XPATH, "//*[text()='提交']").click()
+        self.browser.find_element(By.XPATH, "//*[@id='regex-save']").click()
         alert = BeAlertBox()
         msg = alert.get_msg()
         if alert.title_contains("保存成功"):
-            log.info("数据 {0} 修改成功".format(obj))
+            log.info("数据 {0} 修改成功".format(regexp))
         else:
-            log.warning("数据 {0} 修改失败，失败提示: {1}".format(obj, msg))
-        set_global_var("ResultMsg", msg, False)
+            log.warning("数据 {0} 修改失败，失败提示: {1}".format(regexp, msg))
+        gbl.temp.set("ResultMsg", msg)
 
     def regexp_page(self, regexp_name, remark, regexp_info):
         """
@@ -199,8 +236,8 @@ class RegexpTemplate:
         """
         :param regexp_name: 正则模版名称
         """
-        self.choose(regexp_name)
-        self.browser.find_element(By.XPATH, "//*[text()='删除']").click()
+        self.search(query={"关键字": regexp_name}, need_choose=True)
+        self.browser.find_element(By.XPATH, "//*[@id='regexp-del']").click()
 
         alert = BeAlertBox(back_iframe=False)
         msg = alert.get_msg()
@@ -215,7 +252,7 @@ class RegexpTemplate:
         else:
             # 无权操作
             log.warning("{0} 删除失败，失败提示: {1}".format(regexp_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def data_clear(self, regexp_name, fuzzy_match=False):
         """
@@ -223,58 +260,49 @@ class RegexpTemplate:
         :param fuzzy_match: 模糊匹配
         """
         # 用于清除数据，在测试之前执行, 使用关键字开头模糊查询
-        wait = WebDriverWait(self.browser, 30)
-        wait.until(ec.element_to_be_clickable((By.XPATH, "//*[@id='keyword']/following-sibling::span/input[1]")))
-        self.browser.find_element(By.XPATH, "//*[@id='keyword']/following-sibling::span/input[1]").clear()
-        self.browser.find_element(By.XPATH, "//*[@id='keyword']/following-sibling::span/input[1]").send_keys(regexp_name)
-        self.browser.find_element(By.XPATH, "//*[text()='查询']").click()
-        page_wait()
-        sleep(1)
+        self.search(query={"关键字": regexp_name}, need_choose=False)
         if fuzzy_match:
             record_element = self.browser.find_elements(
                 By.XPATH, "//*[@field='regxTemplName']//*[starts-with(@data-mtips,'{}')]".format(regexp_name))
         else:
             record_element = self.browser.find_elements(
                 By.XPATH, "//*[@field='regxTemplName']//*[@data-mtips='{0}']".format(regexp_name))
-        if len(record_element) > 0:
-            exist_data = True
-
-            while exist_data:
-                pe = record_element[0]
-                search_result = pe.text
-                pe.click()
-                log.info("选择: {0}".format(search_result))
-                # 删除
-                self.browser.find_element(By.XPATH, "//*[text()='删除']").click()
-                alert = BeAlertBox(back_iframe=False)
-                msg = alert.get_msg()
-                if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
-                    alert.click_ok()
-                    alert = BeAlertBox(back_iframe=False)
-                    msg = alert.get_msg()
-                    if alert.title_contains("成功"):
-                        log.info("{0} 删除成功".format(search_result))
-                        page_wait()
-                        if fuzzy_match:
-                            # 重新获取页面查询结果
-                            record_element = self.browser.find_elements(
-                                By.XPATH, "//*[@field='regxTemplName']//*[starts-with(@data-mtips,'{}')]".format(
-                                    regexp_name))
-                            if len(record_element) > 0:
-                                exist_data = True
-                            else:
-                                # 查询结果为空,修改exist_data为False，退出循环
-                                log.info("数据清理完成")
-                                exist_data = False
-                        else:
-                            break
-                    else:
-                        raise Exception("删除数据时出现未知异常: {0}".format(msg))
-                else:
-                    # 无权操作
-                    log.warning("{0} 删除失败，失败提示: {1}".format(regexp_name, msg))
-                    set_global_var("ResultMsg", msg, False)
-                    break
-        else:
+        if len(record_element) == 0:
             # 查询结果为空,结束处理
             log.info("查询不到满足条件的数据，无需清理")
+            return
+
+        exist_data = True
+        while exist_data:
+            pe = record_element[0]
+            search_result = pe.text
+            pe.click()
+            log.info("选择: {0}".format(search_result))
+            # 删除
+            self.browser.find_element(By.XPATH, "//*[@id='regexp-del']").click()
+            alert = BeAlertBox(back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
+                alert.click_ok()
+                alert = BeAlertBox(back_iframe=False)
+                msg = alert.get_msg()
+                if alert.title_contains("成功"):
+                    log.info("{0} 删除成功".format(search_result))
+                    page_wait()
+                    if fuzzy_match:
+                        # 重新获取页面查询结果
+                        record_element = self.browser.find_elements(
+                            By.XPATH, "//*[@field='regxTemplName']//*[starts-with(@data-mtips,'{}')]".format(regexp_name))
+                        if len(record_element) == 0:
+                            # 查询结果为空,修改exist_data为False，退出循环
+                            log.info("数据清理完成")
+                            exist_data = False
+                    else:
+                        break
+                else:
+                    raise Exception("删除数据时出现未知异常: {0}".format(msg))
+            else:
+                # 无权操作
+                log.warning("{0} 删除失败，失败提示: {1}".format(regexp_name, msg))
+                gbl.temp.set("ResultMsg", msg)
+                break

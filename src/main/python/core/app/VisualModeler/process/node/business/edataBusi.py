@@ -10,7 +10,7 @@ from selenium.common.exceptions import NoSuchElementException
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def edata_business(node_name, edata, use_edata_name, advance_set):
@@ -39,7 +39,7 @@ def edata_business(node_name, edata, use_edata_name, advance_set):
         }
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 设置节点名称
     if node_name:
         browser.find_element(By.XPATH, "//*[@name='node_name']/preceding-sibling::input[1]").clear()
@@ -137,7 +137,7 @@ def edata_business(node_name, edata, use_edata_name, advance_set):
         log.info("保存业务配置成功")
     else:
         log.warning("保存业务配置失败，失败提示: {0}".format(msg))
-    set_global_var("ResultMsg", msg, False)
+    gbl.temp.set("ResultMsg", msg)
 
     # 刷新页面，返回画流程图
     browser.refresh()

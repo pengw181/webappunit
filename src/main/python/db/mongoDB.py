@@ -4,15 +4,15 @@
 
 import pymongo
 from src.main.python.lib.logger import log
-from src.main.python.conf.loads import mongo_config, properties
+from src.main.python.lib.globals import gbl
 
 
 class MongoDB:
 
     def __init__(self, host=None, username=None, password=None):
         # 初始化，默认根据environment从配置文件加载
-        version = properties.get("environment")
-        self.default_mongo_info = mongo_config.get(version)
+        version = gbl.service.get("environment")
+        self.default_mongo_info = gbl.mongo.get(version)
         if host is None:
             host = self.default_mongo_info.get("host")
         if username is None:
@@ -129,7 +129,7 @@ class MongoInitError:
 
 
 if __name__ == "__main__":
-    properties["environment"] = "v31.postgres"
+    gbl.mongo.set("environment", "v31.postgres")
     mongo_client = MongoDB()
     # mongo_client.get_collection(collection="Workflow.VosNode.AttachFile.files")
     mongo_client.get_collection(collection="Workflow.MailNode.AttachFile.files")

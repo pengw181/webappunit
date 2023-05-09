@@ -12,13 +12,13 @@ from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.core.app.AiSee.netunit.menu import choose_menu
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class Template(object):
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         choose_menu(menu="统一网元配置")
 
         # 切到统一网元配置页面
@@ -64,7 +64,7 @@ class Template(object):
         else:
             log.warning("保存配置失败，失败提示: {0}".format(msg))
             alert.click_ok()
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def update(self, obj_template, template_name, netunit_type, login_type, remark, login_set):
         """
@@ -80,7 +80,8 @@ class Template(object):
         alert = BeAlertBox(back_iframe=False, timeout=1)
         exist = alert.exist_alert
         if exist:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             # 切换iframe
             wait = WebDriverWait(self.browser, 30)
@@ -101,7 +102,7 @@ class Template(object):
             else:
                 log.warning("保存配置失败，失败提示: {0}".format(msg))
                 alert.click_ok()
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def template_page(self, template_name, netunit_type, login_type, remark, login_set):
         """
@@ -192,7 +193,7 @@ class Template(object):
                 log.warning("{0} 删除失败，失败提示: {1}".format(obj_template, msg))
         else:
             log.warning("{0} 删除失败，失败提示: {1}".format(obj_template, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def bind_netunit(self, obj_template, condition, assign_type, netunit_list=None):
         """
@@ -261,7 +262,7 @@ class Template(object):
                         log.warning("网元分配失败，失败提示: {}".format(msg))
                 else:
                     log.warning("网元分配失败，失败提示: {}".format(msg))
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
 
         elif assign_type == "分配所选":
             if netunit_list is None:
@@ -286,7 +287,7 @@ class Template(object):
                         log.warning("网元分配失败，失败提示: {}".format(msg))
                 else:
                     log.warning("网元分配失败，失败提示: {}".format(msg))
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
 
         elif assign_type == "移除全部":
             self.browser.find_element(By.XPATH, "//*[@id='allToQuoted']").click()
@@ -303,7 +304,7 @@ class Template(object):
                     log.warning("网元移除失败，失败提示: {}".format(msg))
             else:
                 log.warning("网元移除失败，失败提示: {}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
         elif assign_type == "移除所选":
             if netunit_list is None:
@@ -328,7 +329,7 @@ class Template(object):
                         log.warning("网元移除失败，失败提示: {}".format(msg))
                 else:
                     log.warning("网元移除失败，失败提示: {}".format(msg))
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
 
         else:
             log.error("网元分配方式仅支持：分配全部、分配所选、移除全部、移除所选")
@@ -369,4 +370,4 @@ class Template(object):
         else:
             log.warning("网元配置下发失败，失败提示: {}".format(msg))
             alert.click_ok()
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)

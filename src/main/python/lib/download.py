@@ -4,7 +4,7 @@
 
 import os
 from src.main.python.lib.logger import log
-from src.main.python.conf.loads import properties
+from src.main.python.lib.globals import gbl
 
 
 def exist_download_file(filename, file_suffix):
@@ -16,7 +16,7 @@ def exist_download_file(filename, file_suffix):
     """
 
     find_flag = False
-    downLoadPath = properties.get("projectBasePath") + properties.get("projectName") + properties.get("downLoadPath")
+    downLoadPath = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/download/'
     dir_files = os.listdir(downLoadPath)
     for f in dir_files:
         if f.find(filename) > -1 and f.endswith(file_suffix.lower()):

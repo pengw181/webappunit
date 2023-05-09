@@ -11,7 +11,7 @@ from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.windows import WindowHandles
 from src.main.python.core.app.VisualModeler.process.draw.processInfo import Process
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
@@ -21,7 +21,7 @@ class ManualExecute:
         """
         :param process_name: 流程名称
         """
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.process_name = process_name
         # 判断当前是否在一键启动页面
         self.current_win_handle = WindowHandles()
@@ -50,7 +50,7 @@ class ManualExecute:
             log.info("调用测试流程成功")
         else:
             log.error("调用测试流程失败，失败原因: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def fast_run(self, params):
         """
@@ -86,4 +86,4 @@ class ManualExecute:
         else:
             msg = "操作成功"
             log.info("一键启动成功")
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)

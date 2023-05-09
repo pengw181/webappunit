@@ -13,7 +13,7 @@ from src.main.python.lib.input import set_textarea, set_text_enable_var
 from src.main.python.core.app.VisualModeler.process.node.oprt.function import FunctionWorker
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def condition(array, iframe_xpath_list=None, basic_cal=False):
@@ -41,7 +41,7 @@ def condition(array, iframe_xpath_list=None, basic_cal=False):
         ["自定义值", "1115"]
     ]
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 切换到条件表达式配置页面iframe， 基础运算/过滤运算/动作的表达式在当前页面，不需要再跳转iframe
     if not basic_cal:
         browser.switch_to.frame(
@@ -188,11 +188,11 @@ def condition(array, iframe_xpath_list=None, basic_cal=False):
                 log.info("保存条件成功")
             else:
                 log.warning("保存条件失败，失败提示: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
             for frame_xpath in iframe_xpath_list:
                 frame = browser.find_element(By.XPATH, frame_xpath)
                 browser.switch_to.frame(frame)
     else:
         # 基础运算不需要保存表达式，通过保存运算时保存
-        sleep(1)
+        pass

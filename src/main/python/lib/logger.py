@@ -4,16 +4,15 @@
 
 import logging
 import os
-from src.main.python.lib.globalVariable import *
-from src.main.python.conf.loads import properties
+from src.main.python.lib.globals import gbl
 
 
 def get_logger():
     # 创建logger
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)  # 设置logger日志等级
-    logs_path = properties.get("projectBasePath") + properties.get("projectName") + '/src/main/python/logs/'
-    application = get_global_var("Application")
+    logs_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/logs/'
+    application = gbl.service.get("application")
     if application is None:
         filename = logs_path + "catalina.out"
     else:
@@ -27,7 +26,7 @@ def get_logger():
         # 创建handler
 
         fh = logging.FileHandler(filename, encoding="utf-8")   # 设置日志写入文件
-        ch = logging.StreamHandler()    # 控制台输出
+        ch = logging.StreamHandler()    # 控制台输出sys.stdout
 
         # 设置输出日志格式
         formatter = logging.Formatter(

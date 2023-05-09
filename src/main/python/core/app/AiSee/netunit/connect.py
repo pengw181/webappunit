@@ -11,13 +11,13 @@ from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.core.app.AiSee.netunit.menu import choose_menu
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class ConnectTest(object):
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         choose_menu(menu="网元连通性")
 
         # 切到网元连通性页面
@@ -136,7 +136,7 @@ class ConnectTest(object):
             else:
                 log.warning("启动测试全部网元失败，失败提示: {0}".format(msg))
                 alert.click_ok()
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def test_selected(self, condition, netunit_list):
         """
@@ -165,4 +165,4 @@ class ConnectTest(object):
             else:
                 log.warning("启动确定测试选中的网元失败，失败提示: {0}".format(msg))
                 alert.click_ok()
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)

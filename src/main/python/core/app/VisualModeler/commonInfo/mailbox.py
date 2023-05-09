@@ -14,13 +14,13 @@ from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.core.app.VisualModeler.doctorWho import DoctorWho
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class Mail:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         DoctorWho().choose_menu("常用信息管理-邮箱管理")
         self.browser.switch_to.frame(
             self.browser.find_element(
@@ -41,16 +41,16 @@ class Mail:
         # 邮箱地址
         if query.__contains__("邮箱地址"):
             mail_addr = query.get("邮箱地址")
-            self.browser.find_element(By.XPATH, "//*[@name='mailAddr']/preceding-sibling::span/input[1]").clear()
-            self.browser.find_element(By.XPATH, "//*[@name='mailAddr']/preceding-sibling::span/input[1]").send_keys(
+            self.browser.find_element(By.XPATH, "//*[@name='mailAddr']/preceding-sibling::input[1]").clear()
+            self.browser.find_element(By.XPATH, "//*[@name='mailAddr']/preceding-sibling::input[1]").send_keys(
                 mail_addr)
             select_item = mail_addr
 
         # 代理名称
         if query.__contains__("代理名称"):
             proxy_name = query.get("代理名称")
-            self.browser.find_element(By.XPATH, "//*[@name='proxyName']/preceding-sibling::span/input[1]").clear()
-            self.browser.find_element(By.XPATH, "//*[@name='proxyName']/preceding-sibling::span/input[1]").send_keys(
+            self.browser.find_element(By.XPATH, "//*[@name='proxyName']/preceding-sibling::input[1]").clear()
+            self.browser.find_element(By.XPATH, "//*[@name='proxyName']/preceding-sibling::input[1]").send_keys(
                 proxy_name)
 
         #  邮箱类型
@@ -68,7 +68,7 @@ class Mail:
         if alert.exist_alert:
             msg = alert.get_msg()
             log.info("弹出框返回: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
             return
         if need_choose:
             if select_item:
@@ -120,7 +120,7 @@ class Mail:
             log.info("数据 {0} 添加成功".format(mail_addr))
         else:
             log.warning("数据 {0} 添加失败，失败提示: {1}".format(mail_addr, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def update(self, mail, mail_addr, mail_type, data_type, send_protocol, send_server, send_port, receive_protocol,
                receive_server, receive_port, username, pwd, proxy_name, platf_account):
@@ -148,7 +148,8 @@ class Mail:
         alert = BeAlertBox(back_iframe=False, timeout=1)
         exist = alert.exist_alert
         if exist:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             wait = WebDriverWait(self.browser, 10)
             wait.until(ec.frame_to_be_available_and_switch_to_it((
@@ -170,7 +171,7 @@ class Mail:
                 log.info("{0} 修改成功".format(mail))
             else:
                 log.warning("{0} 修改失败，失败提示: {1}".format(mail, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def mail_page(self, mail_addr, mail_type, data_type, send_protocol, send_server, send_port, receive_protocol,
                   receive_server, receive_port, username, pwd, proxy_name, platf_account):
@@ -329,7 +330,8 @@ class Mail:
         alert = BeAlertBox(back_iframe=False, timeout=1)
         exist = alert.exist_alert
         if exist:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             wait = WebDriverWait(self.browser, 10)
             wait.until(ec.frame_to_be_available_and_switch_to_it((
@@ -338,14 +340,14 @@ class Mail:
             wait = WebDriverWait(self.browser, 30)
             wait.until(ec.element_to_be_clickable((By.XPATH, "//*[@name='mailAddr']/preceding-sibling::input")))
 
-            self.browser.find_element(By.XPATH, "//*[@id='testBtn']//*[text()='测试']").click()
+            self.browser.find_element(By.XPATH, "//*[@id='testBtn']").click()
             alert = BeAlertBox(back_iframe=True, timeout=60)
             msg = alert.get_msg()
             if alert.title_contains("测试成功"):
                 log.info("{0} 测试成功".format(mail_addr))
             else:
                 log.warning("{0} 测试失败，测试返回结果: {1}".format(mail_addr, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def delete(self, mail_addr):
         """
@@ -370,7 +372,7 @@ class Mail:
             log.warning("{0} 删除失败，失败提示: {1}".format(mail_addr, msg))
         else:
             log.warning("{0} 删除失败，失败提示: {1}".format(mail_addr, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def data_clear(self, mail_addr, fuzzy_match=False):
         """
@@ -378,57 +380,50 @@ class Mail:
         :param fuzzy_match: 模糊匹配
         """
         # 用于清除数据，在测试之前执行, 使用关键字开头模糊查询
-        self.browser.find_element(By.XPATH, "//*[@name='mailAddr']/preceding-sibling::input").clear()
-        self.browser.find_element(By.XPATH, "//*[@name='mailAddr']/preceding-sibling::input").send_keys(mail_addr)
-        self.browser.find_element(By.XPATH, "//*[@id='btn']//*[text()='查询']").click()
-        page_wait()
+        self.search(query={"邮箱地址": mail_addr}, need_choose=False)
         fuzzy_match = True if fuzzy_match == "是" else False
         if fuzzy_match:
             record_element = self.browser.find_elements(
-                By.XPATH, "//*[@field='mailAddr']/*[contains(@class,'mailAddr') and starts-with(text(),'{0}')]".format(
-                    mail_addr))
+                By.XPATH, "//*[@field='mailAddr']//*[starts-with(text(),'{0}')]".format(mail_addr))
         else:
             record_element = self.browser.find_elements(
-                By.XPATH, "//*[@field='mailAddr']/*[contains(@class,'mailAddr') and text()='{0}']".format(mail_addr))
-        if len(record_element) > 0:
-            exist_data = True
-
-            while exist_data:
-                pe = record_element[0]
-                search_result = pe.text
-                pe.click()
-                log.info("选择: {0}".format(search_result))
-                # 删除
-                self.browser.find_element(By.XPATH, "//*[@id='delBtn']").click()
-                alert = BeAlertBox(back_iframe=False)
-                msg = alert.get_msg()
-                if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
-                    alert.click_ok()
-                    alert = BeAlertBox(back_iframe=False)
-                    msg = alert.get_msg()
-                    if alert.title_contains("成功"):
-                        log.info("{0} 删除成功".format(search_result))
-                        page_wait()
-                        if fuzzy_match:
-                            # 重新获取页面查询结果
-                            record_element = self.browser.find_elements(
-                                By.XPATH, "//*[@field='mailAddr']/*[contains(@class,'mailAddr') and starts-with(text(),'{0}')]".format(
-                                    mail_addr))
-                            if len(record_element) > 0:
-                                exist_data = True
-                            else:
-                                # 查询结果为空,修改exist_data为False，退出循环
-                                log.info("数据清理完成")
-                                exist_data = False
-                        else:
-                            break
-                    else:
-                        raise Exception("删除数据时出现未知异常: {0}".format(msg))
-                else:
-                    # 无权操作
-                    log.warning("{0} 清理失败，失败提示: {1}".format(mail_addr, msg))
-                    set_global_var("ResultMsg", msg, False)
-                    break
-        else:
+                By.XPATH, "//*[@field='mailAddr']//*[text()='{0}']".format(mail_addr))
+        if len(record_element) == 0:
             # 查询结果为空,结束处理
             log.info("查询不到满足条件的数据，无需清理")
+            return
+
+        exist_data = True
+        while exist_data:
+            pe = record_element[0]
+            search_result = pe.text
+            pe.click()
+            log.info("选择: {0}".format(search_result))
+            # 删除
+            self.browser.find_element(By.XPATH, "//*[@id='delBtn']").click()
+            alert = BeAlertBox(back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
+                alert.click_ok()
+                alert = BeAlertBox(back_iframe=False)
+                msg = alert.get_msg()
+                if alert.title_contains("成功"):
+                    log.info("{0} 删除成功".format(search_result))
+                    page_wait()
+                    if fuzzy_match:
+                        # 重新获取页面查询结果
+                        record_element = self.browser.find_elements(
+                            By.XPATH, "//*[@field='mailAddr']//*[starts-with(text(),'{0}')]".format(mail_addr))
+                        if len(record_element) == 0:
+                            # 查询结果为空,修改exist_data为False，退出循环
+                            log.info("数据清理完成")
+                            exist_data = False
+                    else:
+                        break
+                else:
+                    raise Exception("删除数据时出现未知异常: {0}".format(msg))
+            else:
+                # 无权操作
+                log.warning("{0} 清理失败，失败提示: {1}".format(mail_addr, msg))
+                gbl.temp.set("ResultMsg", msg)
+                break

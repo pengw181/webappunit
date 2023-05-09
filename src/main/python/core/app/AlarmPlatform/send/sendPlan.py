@@ -2,25 +2,28 @@
 # @Author: peng wei
 # @Time: 2021/12/24 下午3:12
 
+import json
 from time import sleep
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common.exceptions import NoSuchElementException
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.input import set_textarea
 from src.main.python.lib.dateUtil import set_calendar
 from src.main.python.core.app.AlarmPlatform.menu import choose_menu
 from src.main.python.lib.alertBox import BeAlertBox
+from src.main.python.lib.dateCalculation import calculation
 from src.main.python.lib.positionPanel import getPanelXpath
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
 class SendPlan:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.upperOrLower = None
         # 进入菜单
         choose_menu("推送计划")
@@ -34,17 +37,108 @@ class SendPlan:
         page_wait()
         sleep(1)
 
-    def choose(self, plan_name):
+    def search(self, query, need_choose=False):
         """
-        :param plan_name: 推送计划名称
+        :param query: 查询条件，字典
+        :param need_choose: True/False
         """
-        input_ele = self.browser.find_element(By.XPATH, "//*[@name='sendPlanName']/preceding-sibling::input[1]")
-        input_ele.clear()
-        input_ele.send_keys(plan_name)
+        if not isinstance(query, dict):
+            raise TypeError("查询条件需要是字典格式")
+        log.info("查询条件: {0}".format(json.dumps(query, ensure_ascii=False)))
+        select_item = None
+
+        # 推送计划名称
+        if query.__contains__("推送计划名称"):
+            plan_name = query.get("推送计划名称")
+            self.browser.find_element(By.XPATH, "//*[@name='sendPlanName']/preceding-sibling::input[1]").clear()
+            self.browser.find_element(By.XPATH, "//*[@name='sendPlanName']/preceding-sibling::input[1]").send_keys(
+                plan_name)
+            select_item = plan_name
+
+        # 消息模版名称
+        if query.__contains__("消息模版名称"):
+            template_name = query.get("消息模版名称")
+            self.browser.find_element(By.XPATH, "//*[@name='messageTemplateName']/preceding-sibling::input[1]").clear()
+            self.browser.find_element(By.XPATH, "//*[@name='messageTemplateName']/preceding-sibling::input[1]").send_keys(
+                template_name)
+
+        # 接收对象名称
+        if query.__contains__("接收对象名称"):
+            receive_name = query.get("接收对象名称")
+            self.browser.find_element(By.XPATH, "//*[@name='receiveObjectName']/preceding-sibling::input[1]").clear()
+            self.browser.find_element(By.XPATH, "//*[@name='receiveObjectName']/preceding-sibling::input[1]").send_keys(
+                receive_name)
+
+        # 推送类型
+        if query.__contains__("推送类型"):
+            send_type = query.get("推送类型")
+            self.browser.find_element(By.XPATH, "//*[@name='sendType']/preceding-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(send_type)).click()
+
+        # 状态
+        if query.__contains__("状态"):
+            plan_status = query.get("状态")
+            self.browser.find_element(By.XPATH, "//*[@name='sendPlanStatus']/preceding-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(plan_status)).click()
+
+        # 创建人
+        if query.__contains__("创建人"):
+            creator = query.get("创建人")
+            self.browser.find_element(By.XPATH, "//*[@name='creator']/preceding-sibling::input[1]").clear()
+            self.browser.find_element(By.XPATH, "//*[@name='creator']/preceding-sibling::input[1]").send_keys(creator)
+
+        # 创建时间
+        if query.__contains__("创建时间"):
+            begin_time, end_time = query.get("创建时间")
+            # 开始时间
+            if begin_time:
+                self.browser.find_element(By.XPATH, "//*[@name='createDateStart']/preceding-sibling::span//a").click()
+                if isinstance(begin_time, dict):
+                    # 间隔，0表示当前，正数表示未来，负数表示过去
+                    time_interval = begin_time.get("间隔")
+                    # 单位，年、月、天、时、分、秒
+                    time_unit = begin_time.get("单位")
+                    begin_time = calculation(interval=time_interval, unit=time_unit)
+                else:
+                    raise AttributeError("开始时间必须是字典")
+                set_calendar(date_s=begin_time, date_format='%Y-%m-%d %H:%M:%S')
+                log.info("设置创建开始时间: {0}".format(begin_time))
+
+            # 结束时间
+            if end_time:
+                self.browser.find_element(By.XPATH, "//*[@name='createDateEnd']/preceding-sibling::span//a").click()
+                if isinstance(end_time, dict):
+                    # 间隔，0表示当前，正数表示未来，负数表示过去
+                    time_interval = end_time.get("间隔")
+                    # 单位，年、月、天、时、分、秒
+                    time_unit = end_time.get("单位")
+                    end_time = calculation(interval=time_interval, unit=time_unit)
+                else:
+                    raise AttributeError("结束时间必须是字典")
+                set_calendar(date_s=end_time, date_format='%Y-%m-%d %H:%M:%S')
+                log.info("设置创建结束时间: {0}".format(end_time))
+
+        # 查询
         self.browser.find_element(By.XPATH, "//*[@funcid='AlarmPlatform_send_query']").click()
         page_wait()
-        self.browser.find_element(By.XPATH, "//*[@field='sendPlanName']//*[text()='{0}']".format(plan_name)).click()
-        log.info("已选择推送计划名称: {}".format(plan_name))
+        alert = BeAlertBox(timeout=1, back_iframe=False)
+        if alert.exist_alert:
+            msg = alert.get_msg()
+            log.info("弹出框返回: {0}".format(msg))
+            gbl.temp.set("ResultMsg", msg)
+            return
+        if need_choose:
+            if select_item:
+                try:
+                    self.browser.find_element(
+                        By.XPATH, "//*[@field='sendPlanName']//*[text()='{0}']".format(select_item)).click()
+                except NoSuchElementException:
+                    raise KeyError("未找到匹配数据")
+                log.info("选择: {0}".format(select_item))
+            else:
+                raise KeyError("条件不足，无法选择数据")
 
     def add(self, plan_name, send_type, msg_template, receiver, send_date, effect_start_date, effect_end_date,
             send_start_time, send_end_time, remark):
@@ -81,12 +175,12 @@ class SendPlan:
             log.info("数据 {0} 添加成功".format(plan_name))
         else:
             log.warning("数据 {0} 添加失败，失败提示: {1}".format(plan_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
-    def update(self, obj, plan_name, send_type, msg_template, receiver, send_date, effect_start_date, effect_end_date,
+    def update(self, plan, plan_name, send_type, msg_template, receiver, send_date, effect_start_date, effect_end_date,
                send_start_time, send_end_time, remark):
         """
-        :param obj: 推送计划名称
+        :param plan: 推送计划名称
         :param plan_name: 推送计划名称
         :param send_type: 推送类型
         :param msg_template: 消息模版
@@ -98,12 +192,12 @@ class SendPlan:
         :param send_end_time: 有效结束时段
         :param remark: 备注
         """
-        log.info("开始修改数据")
-        self.choose(obj)
+        self.search(query={"推送计划名称": plan}, need_choose=True)
         self.browser.find_element(By.XPATH, "//*[@id='editBtn']").click()
         alert = BeAlertBox(timeout=3, back_iframe=False)
         if alert.exist_alert:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
             return
         else:
             self.browser.switch_to.parent_frame()
@@ -123,10 +217,10 @@ class SendPlan:
             alert = BeAlertBox()
             msg = alert.get_msg()
             if alert.title_contains("保存成功"):
-                log.info("{0} 修改成功".format(obj))
+                log.info("{0} 修改成功".format(plan))
             else:
-                log.warning("{0} 修改失败，失败提示: {1}".format(obj, msg))
-            set_global_var("ResultMsg", msg, False)
+                log.warning("{0} 修改失败，失败提示: {1}".format(plan, msg))
+            gbl.temp.set("ResultMsg", msg)
 
     def send_plan_page(self, plan_name, send_type, msg_template, receiver, send_date, effect_start_date, effect_end_date,
                        send_start_time, send_end_time, remark):
@@ -256,6 +350,22 @@ class SendPlan:
             set_textarea(textarea=remark_textarea, msg=remark)
             log.info("设置备注: {0}".format(remark))
 
+    def _get_status(self, plan_name):
+        """
+        获取当前状态
+        :param plan_name: 告警计划名称
+        :return: True/False
+        """
+        try:
+            plan = self.browser.find_element(
+                By.XPATH, "//*[text()='{}']/../../..".format(plan_name))
+            row_index = plan.get_attribute("datagrid-row-index")
+            js = 'return $(".easyui-switchbutton")[{0}].checked;'.format(int(row_index))
+            current_status = self.browser.execute_script(js)
+        except NoSuchElementException:
+            current_status = False
+        return current_status
+
     def update_status(self, plan_name, set_status, research=True):
         """
         :param plan_name: 推送计划名称
@@ -263,7 +373,7 @@ class SendPlan:
         :param research: 是否重新查询，默认true
         """
         if research:
-            self.choose(plan_name)
+            self.search(query={"推送计划名称": plan_name}, need_choose=True)
 
         # 获取当前状态
         js = 'return $(".easyui-switchbutton")[0].checked;'
@@ -287,14 +397,13 @@ class SendPlan:
                     log.warning("{0} {1} 失败，失败提示: {2}".format(set_status, plan_name, msg))
             else:
                 log.warning("{0} {1} 失败，失败提示: {2}".format(set_status, plan_name, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def delete(self, plan_name):
         """
-        :param plan_name: 消息模版名称
+        :param plan_name: 推送计划名称
         """
-        log.info("开始删除数据")
-        self.choose(plan_name)
+        self.search(query={"推送计划名称": plan_name}, need_choose=True)
         self.browser.find_element(By.XPATH, "//*[@id='deleteBtn']").click()
         alert = BeAlertBox(back_iframe=False)
         msg = alert.get_msg()
@@ -309,18 +418,15 @@ class SendPlan:
                 log.warning("{0} 删除失败，失败提示: {1}".format(plan_name, msg))
         else:
             log.warning("{0} 删除失败，失败提示: {1}".format(plan_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def data_clear(self, plan_name, fuzzy_match=False):
         """
-        :param plan_name: 消息模版名称
+        :param plan_name: 推送计划名称
         :param fuzzy_match: 模糊匹配
         """
         # 用于清除数据，在测试之前执行, 使用关键字开头模糊查询
-        self.browser.find_element(By.XPATH, "//*[@name='sendPlanName']/preceding-sibling::input[1]").clear()
-        self.browser.find_element(By.XPATH, "//*[@name='sendPlanName']/preceding-sibling::input[1]").send_keys(plan_name)
-        self.browser.find_element(By.XPATH, "//*[@funcid ='AlarmPlatform_send_query']").click()
-        page_wait()
+        self.search(query={"推送计划名称": plan_name}, need_choose=False)
         fuzzy_match = True if fuzzy_match == "是" else False
         if fuzzy_match:
             record_element = self.browser.find_elements(
@@ -328,45 +434,62 @@ class SendPlan:
         else:
             record_element = self.browser.find_elements(
                 By.XPATH, "//*[@field ='sendPlanName']//*[text()='{0}']".format(plan_name))
-        if len(record_element) > 0:
-            exist_data = True
+        if len(record_element) == 0:
+            # 查询结果为空,结束处理
+            log.info("查询不到满足条件的数据，无需清理")
+            return
 
-            while exist_data:
-                pe = record_element[0]
-                search_result = pe.text
-                pe.click()
-                # 将发送计划禁用
-                self.update_status(plan_name=search_result, set_status="禁用", research=False)
-                log.info("选择: {0}".format(search_result))
-                # 删除
-                self.browser.find_element(By.XPATH, "//*[@id='deleteBtn']").click()
-                alert = BeAlertBox(back_iframe=False)
+        exist_data = True
+        while exist_data:
+            pe = record_element[0]
+            search_result = pe.text
+            pe.click()
+            if self._get_status(search_result):
+                self.browser.find_element(
+                    By.XPATH, "//*[@field ='sendPlanName']//*[text()='{0}']/../../following-sibling::td[@field='sendPlanStatus']/div/span".format(
+                        search_result)).click()
+                log.info("禁用推送计划: {}".format(search_result))
+                alert = BeAlertBox(timeout=1, back_iframe=False)
                 msg = alert.get_msg()
-                if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
+                if alert.title_contains("确认禁用{}吗".format(search_result), auto_click_ok=False):
                     alert.click_ok()
                     alert = BeAlertBox(back_iframe=False)
                     msg = alert.get_msg()
-                    if alert.title_contains("成功"):
-                        log.info("{0} 删除成功".format(search_result))
-                        page_wait()
-                        if fuzzy_match:
-                            # 重新获取页面查询结果
-                            record_element = self.browser.find_elements(
-                                By.XPATH, "//*[@field ='sendPlanName']//*[starts-with(text(),'{0}')]".format(plan_name))
-                            if len(record_element) > 0:
-                                exist_data = True
-                            else:
-                                # 查询结果为空,修改exist_data为False，退出循环
-                                log.info("数据清理完成")
-                                exist_data = False
-                        else:
-                            break
+                    if alert.title_contains("操作成功"):
+                        log.info("禁用 {} 成功".format(search_result))
                     else:
-                        raise Exception("删除数据时出现未知异常: {0}".format(msg))
+                        log.warning("禁用 {} 失败，失败提示: {}".format(search_result, msg))
+                        return
                 else:
-                    log.warning("{0} 清理失败，失败提示: {1}".format(plan_name, msg))
-                    set_global_var("ResultMsg", msg, False)
-                    break
-        else:
-            # 查询结果为空,结束处理
-            log.info("查询不到满足条件的数据，无需清理")
+                    log.warning("禁用 {} 失败，失败提示: {}".format(search_result, msg))
+                    return
+                # 重新点击该行记录
+                self.browser.find_element(
+                    By.XPATH, "//*[@field ='sendPlanName']//*[text()='{0}']".format(search_result)).click()
+            # 删除
+            self.browser.find_element(By.XPATH, "//*[@id='deleteBtn']").click()
+            alert = BeAlertBox(back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
+                alert.click_ok()
+                alert = BeAlertBox(back_iframe=False)
+                msg = alert.get_msg()
+                if alert.title_contains("成功"):
+                    log.info("{0} 删除成功".format(search_result))
+                    page_wait()
+                    if fuzzy_match:
+                        # 重新获取页面查询结果
+                        record_element = self.browser.find_elements(
+                            By.XPATH, "//*[@field ='sendPlanName']//*[starts-with(text(),'{0}')]".format(plan_name))
+                        if len(record_element) == 0:
+                            # 查询结果为空,修改exist_data为False，退出循环
+                            log.info("数据清理完成")
+                            exist_data = False
+                    else:
+                        break
+                else:
+                    raise Exception("删除数据时出现未知异常: {0}".format(msg))
+            else:
+                log.warning("{0} 清理失败，失败提示: {1}".format(plan_name, msg))
+                gbl.temp.set("ResultMsg", msg)
+                break

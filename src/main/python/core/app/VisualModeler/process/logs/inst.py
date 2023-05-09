@@ -8,13 +8,13 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from src.main.python.core.app.VisualModeler.doctorWho import DoctorWho
 from src.main.python.lib.pageMaskWait import page_wait
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class ProcessLog:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         DoctorWho().choose_menu("流程编辑器-流程运行日志")
         page_wait()
         wait = WebDriverWait(self.browser, 30)

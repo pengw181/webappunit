@@ -10,12 +10,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from src.main.python.core.app.VisualModeler.process.node.oprt.calculation import CalculationCenter
-from src.main.python.core.app.VisualModeler.process.node.oprt.loop import var_loop, times_loop, condition_loop
+from src.main.python.core.app.VisualModeler.process.node.oprt.loop import var_loop, times_loop, condition_loop, step_loop
+from src.main.python.core.app.VisualModeler.process.node.oprt.condition import condition
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.dateUtil import set_calendar
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def opt_action(array):
@@ -195,7 +196,7 @@ class OptTreeServer:
 
         :param location: 操作位置，0：爬虫节点配置，1：操作配置，默认为1
         """
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         # locator 用来定位一个id为tree的xpath
         if location == 1:
             # 节点操作配置的操作树，通用
@@ -305,18 +306,18 @@ class OptTreeServer:
             log.info("保存条件成功")
         else:
             log.warning("保存条件失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
         if self.common_tree:
             # 切换到节点iframe
-            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
             # 切换到操作配置iframe
-            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("OptIframe")))
+            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("OptIframe")))
         else:
             # 切换到节点iframe
-            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
             # 切换到业务配置iframe
-            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("CrawlerIframe")))
+            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("CrawlerIframe")))
 
         return True
 
@@ -418,11 +419,11 @@ class OptTreeServer:
         self.browser.switch_to.frame(self.browser.find_element(By.XPATH, option_iframe_xpath))
 
         if where == 1:
-            iframe_xpath_list = [get_global_var("NodeIframe"), get_global_var("CrawlerIframe"), option_iframe_xpath]
+            iframe_xpath_list = [gbl.service.get("NodeIframe"), gbl.service.get("CrawlerIframe"), option_iframe_xpath]
         elif where == 2:
-            iframe_xpath_list = [get_global_var("NodeIframe"), get_global_var("ControlIframe")]
+            iframe_xpath_list = [gbl.service.get("NodeIframe"), gbl.service.get("ControlIframe")]
         else:
-            iframe_xpath_list = [get_global_var("NodeIframe"), get_global_var("OptIframe"), option_iframe_xpath]
+            iframe_xpath_list = [gbl.service.get("NodeIframe"), gbl.service.get("OptIframe"), option_iframe_xpath]
 
         # 循环类型
         if loop_type:
@@ -474,23 +475,23 @@ class OptTreeServer:
             log.info("保存循环成功")
         else:
             log.warning("保存循环失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
         if where == 1:
             # 切换到节点iframe
-            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
             # 切换到业务配置iframe
-            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("CrawlerIframe")))
+            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("CrawlerIframe")))
         elif where == 2:
             # 切换到节点iframe
-            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
             # 切换到控制配置iframe
-            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("ControlIframe")))
+            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("ControlIframe")))
         else:
             # 切换到节点iframe
-            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
             # 切换到操作配置iframe
-            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("OptIframe")))
+            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("OptIframe")))
 
         return True
 
@@ -526,7 +527,7 @@ class OptTreeServer:
                 log.info("添加步骤 {0} 成功".format(s))
             else:
                 log.warning("添加步骤失败，失败提示: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
             # 切换到节点iframe
             self.browser.switch_to.frame(
@@ -635,13 +636,13 @@ class OptTreeServer:
         else:
             log.warning("子流程 {0} 绑定失败，失败提示: {1}".format(subprocess_name, msg))
             result = False
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
         if result:
             # 切换到节点iframe
-            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
             # 切换到操作配置iframe
-            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("OptIframe")))
+            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("OptIframe")))
             # 切换到子流程iframe
             self.browser.switch_to.frame(
                 self.browser.find_element(By.XPATH, "//iframe[contains(@src,'operateNodeChild.html')]"))
@@ -654,7 +655,7 @@ class OptTreeServer:
                 self.browser.find_element(By.XPATH, "//*[@onclick=\"showAdd('subProCnd');\"]//*[text()='修改']").click()
                 log.info("绑定子流程设置条件")
                 sub_process_iframe = "//iframe[contains(@src,'operateNodeChild.html')]"
-                iframe_xpath_list = [get_global_var("NodeIframe"), get_global_var("OptIframe"), sub_process_iframe]
+                iframe_xpath_list = [gbl.service.get("NodeIframe"), gbl.service.get("OptIframe"), sub_process_iframe]
                 condition(array=cond, iframe_xpath_list=iframe_xpath_list)
 
         return result
@@ -763,13 +764,13 @@ class OptTreeServer:
         else:
             log.warning("子流程 {0} 添加失败，失败提示: {1}".format(process_name, msg))
             result = False
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
         if result:
             # 切换到节点iframe
-            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
             # 切换到操作配置iframe
-            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("OptIframe")))
+            self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("OptIframe")))
             # 切换到子流程iframe
             self.browser.switch_to.frame(
                 self.browser.find_element(By.XPATH, "//iframe[contains(@src,'operateNodeChild.html')]"))
@@ -782,7 +783,7 @@ class OptTreeServer:
                 self.browser.find_element(By.XPATH, "//*[@onclick=\"showAdd('subProCnd');\"]//*[text()='修改']").click()
                 log.info("添加子流程设置条件")
                 sub_process_iframe = "//iframe[contains(@src,'operateNodeChild.html')]"
-                iframe_xpath_list = [get_global_var("NodeIframe"), get_global_var("OptIframe"), sub_process_iframe]
+                iframe_xpath_list = [gbl.service.get("NodeIframe"), gbl.service.get("OptIframe"), sub_process_iframe]
                 condition(array=cond, iframe_xpath_list=iframe_xpath_list)
 
         return result
@@ -799,12 +800,12 @@ class OptTreeServer:
             log.info("操作复制成功")
         else:
             log.warning("操作复制失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
         # 切到节点iframe
-        self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+        self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
         # 切到操作配置iframe
-        self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("OptIframe")))
+        self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("OptIframe")))
 
         return True
 
@@ -826,22 +827,22 @@ class OptTreeServer:
             else:
                 log.warning("步骤从操作树删除失败，失败提示: {0}".format(msg))
                 result = False
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
         else:
             log.warning("步骤从操作树删除失败，失败提示: {0}".format(msg))
             result = False
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
         if result:
             if self.common_tree:
                 # 切换到节点iframe
-                self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                 # 切换到操作配置iframe
-                self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("OptIframe")))
+                self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("OptIframe")))
             else:
                 # 切换到节点iframe
-                self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                 # 切换到业务配置iframe
-                self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("CrawlerIframe")))
+                self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("CrawlerIframe")))
 
         return result

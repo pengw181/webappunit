@@ -4,15 +4,14 @@
 
 from time import sleep
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, NoSuchWindowException
 from src.main.python.core.loginPage import login
 from src.main.python.core.staticsLogin import login_tool
 from src.main.python.core.mainPage import AiSee
 from src.main.python.core.app.VisualModeler.doctorWho import DoctorWho
 from src.main.python.lib.windows import WindowHandles
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
-from src.main.python.conf.loads import login_config
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.css import setVisible
 
 
@@ -32,7 +31,7 @@ class Wrap:
                 auto_login_tool()
             elif self.wrap_func == "enter_platform":
                 enter_platform(self.param)
-            elif self.wrap_func == "closeAndEnterDashboard":
+            elif self.wrap_func == "close_enter_dashboard":
                 close_enter_dashboard()
             return func(*args, **kwargs)
         return wrapper
@@ -46,27 +45,30 @@ def auto_enter_vm(*args):
         # 如果方法名是Dashboard开头，表示是仪表盘操作，需要在上一步用例使用AccessReportDashboard进入仪表盘
         pass
     else:
-        browser = get_global_var("browser")
+        browser = gbl.service.get("browser")
         try:
             browser.find_element(By.XPATH, "//*[@id='userName']")
         except AttributeError:
             log.info("当前未登录，自动执行登录操作")
-            arg1 = {
-                "用户名": get_global_var("LoginUser"),
-                "密码": get_global_var("LoginPwd")
-            }
-            username = arg1.get("用户名")
-            password = arg1.get("密码")
+
+            username = gbl.service.get("LoginUser")
+            password = gbl.service.get("LoginPwd")
             login(username, password)
 
-            arg2 = {
-                "归属": get_global_var("Belong"),
-                "领域明细": get_global_var("Domain")
-            }
             action = AiSee()
             action.close_tips()
-            belong = arg2.get("归属")
-            domain = arg2.get("领域明细")
+            belong = gbl.service.get("Belong")
+            domain = gbl.service.get("Domain")
+            action.enter_domain(belong, domain)
+        except NoSuchWindowException:
+            username = gbl.service.get("LoginUser")
+            password = gbl.service.get("LoginPwd")
+            login(username, password)
+
+            action = AiSee()
+            action.close_tips()
+            belong = gbl.service.get("Belong")
+            domain = gbl.service.get("Domain")
             action.enter_domain(belong, domain)
         except NoSuchElementException:
             windows = WindowHandles()
@@ -82,14 +84,11 @@ def auto_enter_vm(*args):
             elif browser.current_window_handle == windows.win_handles.get("一键启动"):
                 log.info("当前处于一键启动窗口")
             else:
-                log.info("当前已登录，未进入领域，自动进入{0}".format(get_global_var("Domain")))
-                arg2 = {
-                    "归属": get_global_var("Belong"),
-                    "领域明细": get_global_var("Domain")
-                }
+                log.info("当前已登录，未进入领域，自动进入{0}".format(gbl.service.get("Domain")))
+
                 action = AiSee()
-                belong = arg2.get("归属")
-                domain = arg2.get("领域明细")
+                belong = gbl.service.get("Belong")
+                domain = gbl.service.get("Domain")
                 action.enter_domain(belong, domain)
 
 
@@ -98,17 +97,14 @@ def auto_login_aisee(*args):
     if args[0] in ['LoginAiSee']:
         pass
     else:
-        browser = get_global_var("browser")
+        browser = gbl.service.get("browser")
         try:
             browser.find_element(By.XPATH, "//*[@id='userName']")
         except AttributeError:
             log.info("当前未登录，自动执行登录操作")
-            arg1 = {
-                "用户名": get_global_var("LoginUser"),
-                "密码": get_global_var("LoginPwd")
-            }
-            username = arg1.get("用户名")
-            password = arg1.get("密码")
+
+            username = gbl.service.get("LoginUser")
+            password = gbl.service.get("LoginPwd")
             login(username, password)
         except NoSuchElementException:
             log.info("用户当前已登录")
@@ -116,23 +112,23 @@ def auto_login_aisee(*args):
 
 # 测试登录页面登录
 def auto_login_tool():
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     try:
         browser.find_element(By.XPATH, "//*[@menuid='CrawlerApp1000']")
     except AttributeError:
         log.info("当前未登录，自动执行登录操作")
         arg1 = {
-            "系统": get_global_var("Application"),
-            "用户名": login_config.get("username"),
-            "密码": login_config.get("password"),
-            "应用跳转url": login_config.get("redirect_url"),
-            "appId": login_config.get("appid"),
-            "领域明细": login_config.get("domain_detail"),
-            "dsKey": login_config.get("dskey"),
-            "客户": login_config.get("custom"),
-            "签名秘钥": login_config.get("signature"),
-            "语言": login_config.get("language"),
-            "登录方式": login_config.get("login_type")
+            "系统": gbl.service.get("application"),
+            "用户名": gbl.login.get("username"),
+            "密码": gbl.login.get("password"),
+            "应用跳转url": gbl.login.get("redirect_url"),
+            "appId": gbl.login.get("appid"),
+            "领域明细": gbl.login.get("domain_detail"),
+            "dsKey": gbl.login.get("dskey"),
+            "客户": gbl.login.get("custom"),
+            "签名秘钥": gbl.login.get("signature"),
+            "语言": gbl.login.get("language"),
+            "登录方式": gbl.login.get("login_type")
         }
         login_tool(system_name=arg1.get("系统"), username=arg1.get("用户名"), password=arg1.get("密码"),
                    redirect_url=arg1.get("应用跳转url"), appId=arg1.get("appId"), domain_detail=arg1.get("领域明细"),
@@ -142,14 +138,14 @@ def auto_login_tool():
 
 # 自动从vm进入告警平台等其它平台
 def enter_platform(platform):
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     menu_map = {
         "告警平台": "告警-告警平台",
         "数据接入": "数据接入-数据接入平台",
         "云平台": "云平台-云平台",
         "OA审批": "OA审批-OA审批平台",
     }
-    if browser.current_window_handle == get_global_var("WinHandles").get(platform):
+    if browser.current_window_handle == gbl.service.get("WinHandles").get(platform):
         log.info("已登录【{}】".format(platform))
     else:
         dw = DoctorWho()
@@ -159,7 +155,7 @@ def enter_platform(platform):
 
 # 关闭并进入仪表盘配置页面
 def close_enter_dashboard():
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     while True:
         # noinspection PyBroadException
         try:

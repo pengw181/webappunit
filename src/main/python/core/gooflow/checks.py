@@ -2,12 +2,12 @@
 # @Author: peng wei
 # @Time: 2021/7/20 上午11:15
 
+import re
 from datetime import datetime
 from src.main.python.db.sqlFormat import get_sql
 from src.main.python.db.SQLHelper import SQLUtil
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
-from src.main.python.conf.loads import properties, db_config
 
 
 def check_db_data(db, schema, table_name, data, count):
@@ -18,6 +18,7 @@ def check_db_data(db, schema, table_name, data, count):
         "data": ""
     }
     need_set_global = False
+    MaxMatchNumWhenRetry = gbl.service.get("maxMatchNumWhenRetry")
 
     # 如果匹配数据末尾有FetchID|script_id，则表示要获取script_id字段，并存入全局变量中，变量名ScriptID，用${ScriptID}来使用变量值
     if data.find("FetchID") > -1:
@@ -29,9 +30,9 @@ def check_db_data(db, schema, table_name, data, count):
     data = data.replace('"', '\\"')
     data = data.replace("'", "\\'")
 
-    db_info = db_config.get(db)
+    db_info = gbl.db.get(db)
     database_type = db_info.get("type")
-    result = get_sql(database_type, data, table_name)
+    result = get_sql(database_type, data, table_name, schema)
     sql = result.get("sql")
     column = result.get("column")
     log.info("原始sql: {}".format(sql))
@@ -42,8 +43,8 @@ def check_db_data(db, schema, table_name, data, count):
     if int(count) == sql_util.result_rows:
         log.info("数据结果匹配成功")
         if need_set_global:
-            set_global_var(get_global_id(), str(sql_result[0][-1]), False)
-            log.info("设置globalId: {0}，值为: {1}".format(get_global_id(), str(sql_result[0][-1])))
+            gbl.temp.set(gbl.global_id, str(sql_result[0][-1]))
+            log.info("设置globalId: {0}，值为: {1}".format(gbl.global_id, str(sql_result[0][-1])))
         rat["status"] = True
     else:
         """
@@ -67,7 +68,7 @@ def check_db_data(db, schema, table_name, data, count):
                 if database_type in ["oracle", "postgres"]:
                     search_col = "to_char({}, 'yyyymmddhh24miss')".format(search_col)
                 sql = "select {0} from {1} where {2} between '{3}' and '{4}'".format(
-                    column, table_name, search_col, get_global_var("StartTime"), get_global_var("EndTime"))
+                    column, table_name, search_col, gbl.temp.get("StartTime"), gbl.temp.get("EndTime"))
             elif search_value.lower() == "null":
                 sql = "select {0} from {1} where {2} is None".format(column, table_name, search_col)
             else:
@@ -87,7 +88,7 @@ def check_db_data(db, schema, table_name, data, count):
         sql_result = sql_util.select(sql)
         result_rows = sql_util.result_rows
         log.info("表里找到{0}条匹配数据".format(result_rows))
-        max_num = int(properties.get("maxMatchNumWhenRetry"))
+        max_num = int(MaxMatchNumWhenRetry)
         if result_rows > max_num:
             sql_result = sql_result[:max_num][:]
             log.info("使用前{}条数据进行比对".format(max_num))
@@ -112,7 +113,7 @@ def check_db_data(db, schema, table_name, data, count):
                 # 将预期结果字段重新调整
                 for i in range(len(tmp))[::2]:
                     if tmp[i + 1] == "now":
-                        value = "{0} 至 {1}".format(get_global_var("StartTime"), get_global_var("EndTime"))
+                        value = "{0} 至 {1}".format(gbl.temp.get("StartTime"), gbl.temp.get("EndTime"))
                     elif tmp[i + 1].lower() == "null":
                         value = "None"
                     else:
@@ -137,17 +138,18 @@ def check_db_data(db, schema, table_name, data, count):
                 for i in range(len(record)):
                     # log.info("check_list[i]：{}".format(check_list[i]))
                     # log.info("GlobalId：{}".format(get_global_id()))
-                    if check_list[i] == get_global_id():
+                    if check_list[i] == gbl.global_id:
                         # log.info("GlobalId字段【{}】不用匹配".format(get_global_id()))
                         pass
                     else:
+                        record_temp = record[i]
                         if check_list[i].find("至") > -1:  # 时间比较
                             patt = r"(.+)\s至\s+(.+)"
                             match = re.match(patt, check_list[i])
                             # log.info(match.group())
                             begin = match.group(1)
                             end = match.group(2)
-                            record_time = record[i]
+                            record_time = record_temp
                             if database_type in ["mysql"]:
                                 record_time = datetime.strptime(record_time, '%Y-%m-%d %H:%M:%S')
                             record_time = datetime.strftime(record_time, '%Y%m%d%H%M%S')
@@ -159,17 +161,17 @@ def check_db_data(db, schema, table_name, data, count):
                                 check_flag = False
                                 break
                         elif check_list[i] == "None":
-                            if record[i] is not None:
+                            if record_temp is not None:
                                 log.info("列名：{0}".format(column_name[i]))
-                                log.info("实际：{0}".format(record[i]))
+                                log.info("实际：{0}".format(record_temp))
                                 log.info("预期：{0}".format(check_list[i]))
                                 last_match_column = column_name[i]
                                 check_flag = False
                                 break
                         elif check_list[i].lower() == "notnull":
-                            if record[i] is None:
+                            if record_temp is None:
                                 log.info("列名：{0}".format(column_name[i]))
-                                log.info("实际：{0}".format(record[i]))
+                                log.info("实际：{0}".format(record_temp))
                                 log.info("预期：{0}".format(check_list[i]))
                                 last_match_column = column_name[i]
                                 check_flag = False
@@ -178,9 +180,10 @@ def check_db_data(db, schema, table_name, data, count):
                             s = check_list[i][9: len(check_list[i]) - 1]
                             item = s.split("&&&")
                             for k in item:
-                                if str(record[i]).find(k.strip()) == -1:
+                                # if str(record_temp).find(k.strip()) == -1:
+                                if record_temp.find(k.strip()) == -1:
                                     log.info("列名：{0}".format(column_name[i]))
-                                    log.info("实际：{0}".format(record[i]))
+                                    log.info("实际：{0}".format(record_temp))
                                     log.info("预期：{0}".format(k.strip()))
                                     last_match_column = column_name[i]
                                     check_flag = False
@@ -196,9 +199,11 @@ def check_db_data(db, schema, table_name, data, count):
                             # if database_type in ["oracle"]:
                             #     if check_list[i] == "":
                             #         check_list[i] = None
-                            if str(record[i]) != check_list[i]:
+
+                            # if str(record_temp) != check_list[i]:
+                            if record_temp != check_list[i]:
                                 log.info("列名：{0}".format(column_name[i]))
-                                log.info("实际：{0}".format(record[i]))
+                                log.info("实际：{0}".format(record_temp))
                                 log.info("预期：{0}".format(check_list[i]))
                                 last_match_column = column_name[i]
                                 check_flag = False
@@ -228,7 +233,7 @@ def check_db_data(db, schema, table_name, data, count):
 def check_msg(msg):
     # 将操作后得到的弹出框或其他返回信息，用set_global_var存起来，用于compare里信息比较
     if isinstance(msg, str):
-        return get_global_var("ResultMsg").find(msg) > -1
+        return gbl.temp.get("ResultMsg").find(msg) > -1
     else:
         log.error("匹配信息不是字符串，无法匹配")
         return False

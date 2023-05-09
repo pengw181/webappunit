@@ -8,8 +8,9 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
+from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def cmd_node_choose_level(level):
@@ -18,40 +19,13 @@ def cmd_node_choose_level(level):
     :param level: 层级
     :return: 点击
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     level_path = level.split(",", 1)
-    first_level = level_path[0]
 
-    # 先等待3秒,下拉框有时候无法点击
-    sleep(3)
-
-    # 等待加载下拉框列表
-    wait = WebDriverWait(browser, 30)
-    wait.until(ec.element_to_be_clickable((
-        By.XPATH, "//*[contains(@id,'_tree_')]/span[@class='tree-title' and text()='{0}']".format(first_level))))
-
-    element = browser.find_element(
-        By.XPATH, "//*[contains(@id,'_tree_')]/span[@class='tree-title' and text()='{0}']".format(first_level))
-    browser.execute_script("arguments[0].scrollIntoView(true);", element)
-    log.info("定位到层级: {0}".format(first_level))
-    element.click()
-    log.info("点击层级: {0}".format(first_level))
-    sleep(1)
-
-    if len(level_path) > 1:
-        second_path = level_path[1]
-
-        # 等待加载下拉框列表
-        wait = WebDriverWait(browser, 30)
-        wait.until(ec.element_to_be_clickable((
-            By.XPATH, "//*[contains(@id,'_tree_')]/span[@class='tree-title' and text()='{0}']".format(second_path))))
-
-        element = browser.find_element(
-            By.XPATH, "//*[contains(@id,'_tree_')]/span[@class='tree-title' and text()='{0}']".format(second_path))
-        browser.execute_script("arguments[0].scrollIntoView(true);", element)
-        log.info("定位到层级: {0}".format(second_path))
-        element.click()
-        log.info("点击层级: {0}".format(second_path))
+    for level in level_path:
+        panel_xpath = getPanelXpath()
+        browser.find_element(By.XPATH, panel_xpath + "//*[text()='{}']".format(level)).click()
+        log.info("点击层级: {0}".format(level))
         sleep(1)
 
 
@@ -61,7 +35,7 @@ def cmd_node_choose_member(member_list):
     :param member_list: 层级成员，数组
     :return: 点击
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     need_wait = True
     for member in member_list:
         if need_wait:
@@ -82,7 +56,7 @@ def cmd_set_choose_level(level_list):
     :param level_list: 层级列表
     :return: 点击
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     for level in level_list:
         level_path = level.split(",", 1)
         first_level = level_path[0]
@@ -139,7 +113,7 @@ def choose_level(level_list):
     :param level_list: 网元分类，数组
     :return: 点击
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
 
     # 先勾选取消所有已选项
     tree_selected = browser.find_elements(By.XPATH, "//*[contains(@id,'_tree_') and contains(@class, 'selected')]")

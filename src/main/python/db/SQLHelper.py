@@ -6,7 +6,7 @@ import pymysql
 import cx_Oracle
 import psycopg2
 from src.main.python.lib.logger import log
-from src.main.python.conf.loads import db_config
+from src.main.python.lib.globals import gbl
 
 
 class SQLUtil:
@@ -16,7 +16,7 @@ class SQLUtil:
         :param db: 数据库标识，如gmcc.maria
         :param schema: 原始的schema，如main
         """
-        db_info = db_config.get(db)
+        db_info = gbl.db.get(db)
         log.debug("数据库配置信息：{0}".format(db_info))
         try:
             self.database_type = db_info.get("type")
@@ -111,8 +111,24 @@ class SQLUtil:
                         log.info("查询结果：{0}".format(date_list))
 
                     # clob转字符串
-                    if isinstance(date_list, cx_Oracle.LOB):
+                    if isinstance(date_list, cx_Oracle.LOB):    # 单个值
                         date_list = date_list.read()
+                    elif isinstance(date_list, list):
+                        temp_data_list = []
+                        for temp in date_list:
+                            if isinstance(temp, cx_Oracle.LOB):     # 一维数组
+                                temp_data = temp.read()
+                                temp_data_list.append(temp_data)
+                            else:       # 二维数组
+                                _temp_data_list = []
+                                for _temp in temp:
+                                    if isinstance(_temp, cx_Oracle.LOB):
+                                        temp_data = _temp.read()
+                                        _temp_data_list.append(temp_data)
+                                    else:
+                                        _temp_data_list.append(_temp)
+                                temp_data_list.append(_temp_data_list)
+                        date_list = temp_data_list
 
             except Exception as e:
                 raise e
@@ -157,12 +173,12 @@ class SQLUtil:
 
 
 if __name__ == '__main__':
-    # db1 = "gmcc.oracle"
-    # db1 = "v3.maria"
     db1 = "v31.oracle"
     schema1 = "main"
-    # sql1 = "select * from tn_catalog_def"
-    sql1 = "select result_sample from tn_interface_cfg where 1 = 1 and interface_name = 'pw自动化测试第三方soap接口'"
-    # sql1 = "update ZG_O_GH8XVA9NLR set col_6='xxxx' where col_3='张三551'"
+    sql1 = "select column_name from user_tab_columns where table_name = upper('tn_node_email_attach') AND data_type = upper('clob')"
     t = SQLUtil(db1, schema1)
-    log.info("返回结果：%s " % t.select(sql1))
+    sql_result = t.select(sql1)
+    log.info("返回结果：%s " % sql_result)
+    print(sql_result)
+    clob_col = sql_result[:, 0]
+    print(clob_col)

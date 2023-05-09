@@ -2,6 +2,7 @@
 # @Author: peng wei
 # @Time: 2021/8/17 下午4:09
 
+import json
 from time import sleep
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.action_chains import ActionChains
@@ -14,13 +15,13 @@ from src.main.python.lib.input import set_textarea
 from src.main.python.core.app.VisualModeler.doctorWho import DoctorWho
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class CmdSet:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         DoctorWho().choose_menu("指令配置-指令集")
         page_wait()
         wait = WebDriverWait(self.browser, 30)
@@ -31,61 +32,64 @@ class CmdSet:
         page_wait()
         sleep(1)
 
-    def search(self, cmd_name=None, cmd_use=None, alive=None, public_cmd=None, cmd_from=None, check_tag=None,
-               level=None, vendor=None, model=None):
+    def search(self, query, need_choose=False):
         """
-        # 查询。指令名称/网元分类/厂家/设备型号可确定唯一指令
-        :param cmd_name: 指令名称
-        :param cmd_use: 指令用途
-        :param alive: 启用状态
-        :param public_cmd: 公有指令
-        :param cmd_from: 指令来源
-        :param check_tag: 审批状态
-        :param level: 网元分类
-        :param vendor: 厂家
-        :param model: 设备型号
-        :return:
+        :param query: 查询条件，字典
+        :param need_choose: True/False
         """
+        if not isinstance(query, dict):
+            raise TypeError("查询条件需要是字典格式")
+        log.info("查询条件: {0}".format(json.dumps(query, ensure_ascii=False)))
+        select_item = None
+
         # 指令名称
-        if cmd_name:
+        if query.__contains__("指令名称"):
+            cmd_name = query.get("指令名称")
             self.browser.find_element(By.XPATH, "//*[@name='cmdKeyword']/preceding-sibling::input").clear()
             self.browser.find_element(By.XPATH, "//*[@name='cmdKeyword']/preceding-sibling::input").send_keys(cmd_name)
             log.info("设置指令名称: {0}".format(cmd_name))
+            select_item = cmd_name
 
         # 指令用途
-        if cmd_use:
+        if query.__contains__("指令用途"):
+            cmd_use = query.get("指令用途")
             self.browser.find_element(By.XPATH, "//*[@id='cmdUse']/following-sibling::span//a").click()
             self.browser.find_element(By.XPATH, "//*[contains(@id,'cmdUse') and text()='{0}']".format(cmd_use)).click()
             log.info("设置指令用途: {0}".format(cmd_use))
 
         # 启用状态
-        if alive:
+        if query.__contains__("启用状态"):
+            alive = query.get("启用状态")
             self.browser.find_element(By.XPATH, "//*[@id='isAlive']/following-sibling::span//a").click()
             self.browser.find_element(By.XPATH, "//*[contains(@id,'isAlive') and text()='{0}']".format(alive)).click()
             log.info("设置启用状态: {0}".format(alive))
 
         # 公有指令
-        if public_cmd:
+        if query.__contains__("公有指令"):
+            public_cmd = query.get("公有指令")
             self.browser.find_element(By.XPATH, "//*[@id='isPublicCmd']/following-sibling::span//a").click()
             self.browser.find_element(
                 By.XPATH, "//*[contains(@id,'isPublicCmd') and text()='{0}']".format(public_cmd)).click()
             log.info("设置公有指令: {0}".format(public_cmd))
 
         # 指令来源
-        if cmd_from:
+        if query.__contains__("指令来源"):
+            cmd_from = query.get("指令来源")
             self.browser.find_element(By.XPATH, "//*[@id='isDown']/following-sibling::span//a").click()
             self.browser.find_element(By.XPATH, "//*[contains(@id,'isDown') and text()='{0}']".format(cmd_from)).click()
             log.info("设置指令来源: {0}".format(cmd_from))
 
         # 审批状态
-        if check_tag:
+        if query.__contains__("审批状态"):
+            check_tag = query.get("审批状态")
             self.browser.find_element(By.XPATH, "//*[@id='checkTag']/following-sibling::span//a").click()
             self.browser.find_element(
                 By.XPATH, "//*[contains(@id,'checkTag') and text()='{0}']".format(check_tag)).click()
             log.info("设置审批状态: {0}".format(check_tag))
 
         # 网元分类
-        if level:
+        if query.__contains__("网元分类"):
+            level = query.get("网元分类")
             self.browser.find_element(By.XPATH, "//*[@id='level']/following-sibling::span//a").click()
             choose_level(level_list=level)
             # 再次点击收起下拉框
@@ -94,14 +98,16 @@ class CmdSet:
             sleep(1)
 
         # 厂家
-        if vendor:
+        if query.__contains__("厂家"):
+            vendor = query.get("厂家")
             self.browser.find_element(By.XPATH, "//*[@id='vendor']/following-sibling::span//a").click()
             self.browser.find_element(By.XPATH, "//*[contains(@id,'vendor') and text()='{0}']".format(vendor)).click()
             log.info("设置厂家: {0}".format(vendor))
             sleep(1)
 
         # 设备型号
-        if model:
+        if query.__contains__("设备型号"):
+            model = query.get("设备型号")
             self.browser.find_element(By.XPATH, "//*[@id='netunitModel']/following-sibling::span//a").click()
             self.browser.find_element(
                 By.XPATH, "//*[contains(@id,'netunitModel') and text()='{0}']".format(model)).click()
@@ -110,41 +116,22 @@ class CmdSet:
         # 点击查询
         self.browser.find_element(By.XPATH, "//*[@id='cmdSet-query']").click()
         page_wait()
-
-        # 判断是否有谈出口
         alert = BeAlertBox(timeout=1, back_iframe=False)
         if alert.exist_alert:
             msg = alert.get_msg()
-            log.warning("查询提示: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
-            return False
-
-        # 判断查询是有有结果
-        try:
-            self.browser.find_element(
-                By.XPATH, "//*[@class='datagrid-body']//*[contains(@id,'cmdInfoTab')]//*[@class='datagrid-cell-rownumber' and text()='1']")
-            log.info("查询有结果")
-            return True
-        except NoSuchElementException:
-            log.info("查询无结果")
-            return None
-
-    def choose(self, cmd_name, level, vendor, model):
-        """
-        :param cmd_name: 指令名称
-        :param level: 网元分类，数组
-        :param vendor: 厂家
-        :param model: 设备型号
-        """
-        search_result = self.search(cmd_name=cmd_name, level=level, vendor=vendor, model=model)
-        if search_result:
-            self.browser.find_element(
-                By.XPATH, "//*[@field='cmdName']/*[contains(@class,'cmdName')]/*[text()='{}']".format(cmd_name)).click()
-            log.info("选择指令：{0}".format(cmd_name))
-        elif search_result is None:
-            raise Exception("所选指令不存在, 指令名称: {0}".format(cmd_name))
-        else:
-            raise Exception("查询异常")
+            log.info("弹出框返回: {0}".format(msg))
+            gbl.temp.set("ResultMsg", msg)
+            return
+        if need_choose:
+            if select_item:
+                try:
+                    self.browser.find_element(
+                        By.XPATH, "//*[@field='cmdName']//*[text()='{0}']".format(select_item)).click()
+                except NoSuchElementException:
+                    raise KeyError("未找到匹配数据")
+                log.info("选择: {0}".format(select_item))
+            else:
+                raise KeyError("条件不足，无法选择数据")
 
     def add(self, cmd_name, cmd_category, cmd_use, level, vendor, model, login_type, public_cmd, sensitive_cmd,
             personal_cmd, cmd_timeout, command, remark, rulerx_analyzer, cmd_pagedown, expected_return, sensitive_regex):
@@ -192,8 +179,8 @@ class CmdSet:
         """
         page_wait()
         wait = WebDriverWait(self.browser, 30)
-        wait.until(ec.element_to_be_clickable((By.XPATH, "//*[text()='添加']")))
-        self.browser.find_element(By.XPATH, "//*[text()='添加']").click()
+        wait.until(ec.element_to_be_clickable((By.XPATH, "//*[@id='cmdSet-add']")))
+        self.browser.find_element(By.XPATH, "//*[@id='cmdSet-add']").click()
         wait = WebDriverWait(self.browser, 30)
         wait.until(ec.frame_to_be_available_and_switch_to_it((
             By.XPATH, "//iframe[contains(@src,'/VisualModeler/html/cmd/cmdSetEditWin.html')]")))
@@ -217,12 +204,12 @@ class CmdSet:
         else:
             log.warning("没有弹出框提示信息")
             msg = None
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
-    def update(self, cmd_info, cmd_name, cmd_category, cmd_use, public_cmd, sensitive_cmd, cmd_timeout, command, remark,
+    def update(self, query, cmd_name, cmd_category, cmd_use, public_cmd, sensitive_cmd, cmd_timeout, command, remark,
                rulerx_analyzer, cmd_pagedown, expected_return, sensitive_regex):
         """
-        :param cmd_info: 指令信息
+        :param query: 查询条件
         :param cmd_name: 指令名称
         :param cmd_category: 指令类别
         :param cmd_use: 指令用途
@@ -236,11 +223,8 @@ class CmdSet:
         :param expected_return:  期待返回的结束符
         :param sensitive_regex:  隐藏指令返回
         """
-        if not isinstance(cmd_info, dict):
-            raise ValueError
-        self.choose(cmd_name=cmd_info.get("指令名称"), level=cmd_info.get("网元分类"), vendor=cmd_info.get("厂家"),
-                    model=cmd_info.get("设备型号"))
-        self.browser.find_element(By.XPATH, "//*[text()='修改']").click()
+        self.search(query=query, need_choose=True)
+        self.browser.find_element(By.XPATH, "//*[@id='cmdSet-update']").click()
         wait = WebDriverWait(self.browser, 30)
         wait.until(ec.frame_to_be_available_and_switch_to_it((
             By.XPATH, "//iframe[contains(@src,'/VisualModeler/html/gooflow/processInfoEdit.html')]")))
@@ -263,7 +247,7 @@ class CmdSet:
         else:
             log.warning("没有弹出框提示信息")
             msg = None
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def cmd_page(self, cmd_name, cmd_category, cmd_use,  public_cmd, sensitive_cmd, cmd_timeout, command, remark,
                  rulerx_analyzer, cmd_pagedown, expected_return, sensitive_regex, level=None, vendor=None,
@@ -449,19 +433,13 @@ class CmdSet:
         self.browser.switch_to.parent_frame()
         log.info("选择指令解析模版: {}".format(analyzer))
 
-    def delete(self, cmd_info):
+    def delete(self, query):
         """
-        :param cmd_info: 指令信息
+        :param query: 查询条件
         """
-        if not isinstance(cmd_info, dict):
-            raise ValueError
-        cmd_name = cmd_info.get("指令名称")
-        level = cmd_info.get("网元分类")
-        vendor = cmd_info.get("厂家")
-        model = cmd_info.get("设备型号")
-        self.choose(cmd_name, level, vendor, model)
-        self.browser.find_element(By.XPATH, "//*[text()='删除']").click()
-
+        self.search(query=query, need_choose=True)
+        self.browser.find_element(By.XPATH, "//*[@id='cmdSet-del']").click()
+        cmd_name = query.get("指令名称")
         alert = BeAlertBox(back_iframe=False)
         msg = alert.get_msg()
         if alert.title_contains(cmd_name, auto_click_ok=False):
@@ -475,24 +453,37 @@ class CmdSet:
         else:
             # 无权操作
             log.warning("{0} 删除失败，失败提示: {1}".format(cmd_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
-    def update_status(self, cmd_info, status):
+    def _get_status(self, cmd_name):
+        """
+        获取当前状态
+        :param cmd_name: 指令名称
+        :return: True/False
+        """
+        try:
+            cmd = self.browser.find_element(
+                By.XPATH, "//*[contains(@id,'cmdInfoTab')]//*[text()='{0}']/../../..".format(cmd_name))
+            row_index = cmd.get_attribute("datagrid-row-index")
+            js = 'return $(".switchbutton")[{0}].checked;'.format(row_index)
+            current_status = self.browser.execute_script(js)
+        except NoSuchElementException:
+            current_status = False
+        return current_status
+
+    def update_status(self, query, status, research=True):
         """
         # 启用/禁用
-        :param cmd_info: 指令信息
+        :param query: 查询条件
         :param status: 状态
+        :param research: 是否查询
 
         # 指令集未被使用时，可以正常启用/禁用
         # 指令集已被使用时，可以启用，无法禁用
         """
-        if not isinstance(cmd_info, dict):
-            raise ValueError
-        cmd_name = cmd_info.get("指令名称")
-        level = cmd_info.get("网元分类")
-        vendor = cmd_info.get("厂家")
-        model = cmd_info.get("设备型号")
-        self.choose(cmd_name, level, vendor, model)
+        if research:
+            self.search(query=query, need_choose=True)
+        cmd_name = query.get("指令名称")
         cmd = self.browser.find_element(
             By.XPATH, "//*[contains(@id,'cmdInfoTab')]//*[text()='{0}']/../../..".format(cmd_name))
         row_index = cmd.get_attribute("datagrid-row-index")
@@ -515,11 +506,10 @@ class CmdSet:
                 log.info("启用指令成功")
             else:
                 log.warning("{0}指令失败，失败原因: {1}".format(status, msg))
-            set_global_var("ResultMsg", msg, False)
         else:
             log.info("指令【{0}】状态已经是{1}".format(cmd_name, status))
             msg = "{0}成功".format(status)
-            set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def data_clear(self, cmd_name, fuzzy_match=False):
         """
@@ -527,59 +517,53 @@ class CmdSet:
         :param fuzzy_match: 模糊匹配
         """
         # 用于清除数据，在测试之前执行, 使用关键字开头模糊查询
-        wait = WebDriverWait(self.browser, 30)
-        wait.until(ec.element_to_be_clickable((By.XPATH, "//*[@id='cmdKeyword']/following-sibling::span/input[1]")))
-        self.browser.find_element(By.XPATH, "//*[@id='cmdKeyword']/following-sibling::span/input[1]").clear()
-        self.browser.find_element(By.XPATH, "//*[@id='cmdKeyword']/following-sibling::span/input[1]").send_keys(cmd_name)
-        self.browser.find_element(By.XPATH, "//*[text()='查询']").click()
-        page_wait()
+        self.search(query={"指令名称": cmd_name}, need_choose=False)
         fuzzy_match = True if fuzzy_match == "是" else False
-        sleep(1)
         if fuzzy_match:
             record_element = self.browser.find_elements(
                 By.XPATH, "//*[@field='cmdName']//*[starts-with(@data-mtips,'{}')]".format(cmd_name))
         else:
             record_element = self.browser.find_elements(
                 By.XPATH, "//*[@field='cmdName']//*[@data-mtips='{0}']".format(cmd_name))
-        if len(record_element) > 0:
-            exist_data = True
-
-            while exist_data:
-                pe = record_element[0]
-                js = 'return $(".cmdInfoTab_datagrid-cell-c1-cmdName")[1].innerText;'
-                search_result = self.browser.execute_script(js)
-                pe.click()
-                log.info("选择: {0}".format(search_result))
-                # 删除
-                self.browser.find_element(By.XPATH, "//*[text()='删除']").click()
-                alert = BeAlertBox(back_iframe=False)
-                msg = alert.get_msg()
-                if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
-                    alert.click_ok()
-                    alert = BeAlertBox(back_iframe=False)
-                    msg = alert.get_msg()
-                    if alert.title_contains("成功"):
-                        log.info("{0} 删除成功".format(search_result))
-                        page_wait()
-                        if fuzzy_match:
-                            # 重新获取页面查询结果
-                            record_element = self.browser.find_elements(
-                                By.XPATH, "//*[@field='cmdName']//*[starts-with(@data-mtips,'{}')]".format(cmd_name))
-                            if len(record_element) > 0:
-                                exist_data = True
-                            else:
-                                # 查询结果为空,修改exist_data为False，退出循环
-                                log.info("数据清理完成")
-                                exist_data = False
-                        else:
-                            break
-                    else:
-                        raise Exception("删除数据时出现未知异常: {0}".format(msg))
-                else:
-                    # 无权操作
-                    log.warning("{0} 删除失败，失败提示: {1}".format(cmd_name, msg))
-                    set_global_var("ResultMsg", msg, False)
-                    break
-        else:
+        if len(record_element) == 0:
             # 查询结果为空,结束处理
             log.info("查询不到满足条件的数据，无需清理")
+            return
+
+        exist_data = True
+        while exist_data:
+            pe = record_element[0]
+            js = 'return $(".cmdInfoTab_datagrid-cell-c1-cmdName")[1].innerText;'
+            search_result = self.browser.execute_script(js)
+            if self._get_status(search_result):
+                self.update_status(query={"指令名称": search_result}, status="禁用", research=False)
+            pe.click()
+            log.info("选择: {0}".format(search_result))
+            # 删除
+            self.browser.find_element(By.XPATH, "//*[@id='cmdSet-del']").click()
+            alert = BeAlertBox(back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
+                alert.click_ok()
+                alert = BeAlertBox(back_iframe=False)
+                msg = alert.get_msg()
+                if alert.title_contains("成功"):
+                    log.info("{0} 删除成功".format(search_result))
+                    page_wait()
+                    if fuzzy_match:
+                        # 重新获取页面查询结果
+                        record_element = self.browser.find_elements(
+                            By.XPATH, "//*[@field='cmdName']//*[starts-with(@data-mtips,'{}')]".format(cmd_name))
+                        if len(record_element) == 0:
+                            # 查询结果为空,修改exist_data为False，退出循环
+                            log.info("数据清理完成")
+                            exist_data = False
+                    else:
+                        break
+                else:
+                    raise Exception("删除数据时出现未知异常: {0}".format(msg))
+            else:
+                # 无权操作
+                log.warning("{0} 删除失败，失败提示: {1}".format(cmd_name, msg))
+                gbl.temp.set("ResultMsg", msg)
+                break

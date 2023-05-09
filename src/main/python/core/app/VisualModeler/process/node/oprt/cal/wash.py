@@ -7,7 +7,8 @@ from selenium.webdriver.common.by import By
 from src.main.python.lib.processVar import choose_var
 from src.main.python.lib.regular import RegularCube
 from src.main.python.lib.alertBox import BeAlertBox
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.positionPanel import getPanelXpath
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
@@ -77,7 +78,7 @@ def wash(output_var, input_var, value_type, wash_direction, time_wash, key_wash)
     }
 
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 切换到清洗筛选运算iframe
     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[contains(@src,'operateCfgWash.html')]"))
 
@@ -99,14 +100,11 @@ def wash(output_var, input_var, value_type, wash_direction, time_wash, key_wash)
         for e1 in elements:
             if e1.is_displayed():
                 e1.click()
-                elements = browser.find_elements(
-                    By.XPATH, "//*[contains(@id,'valuetype') and text()='{0}']".format(value_type))
-                for e2 in elements:
-                    if e2.is_displayed():
-                        e2.click()
-                        log.info("设置赋值方式: {0}".format(value_type))
-                        sleep(1)
-                        break
+                panel_xpath = getPanelXpath()
+                browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(value_type)).click()
+                log.info("设置赋值方式: {0}".format(value_type))
+                sleep(1)
+                break
 
     # 筛选方向
     if wash_direction:
@@ -145,7 +143,7 @@ def time_wash_action(enable_flag, time_format, time_interval, time_unit, languag
         "语言": "中文"
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     js = 'return $("#isTime")[0].checked;'
     status = browser.execute_script(js)
     log.info("【按时间筛选】勾选状态: {0}".format(status))
@@ -242,7 +240,7 @@ def key_wash_action(enable_flag, filter_set):
         ]
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     js = 'return $("#isKewWordOrVar")[0].checked;'
     status = browser.execute_script(js)
     log.info("【按关键字/变量筛选】勾选状态: {0}".format(status))
@@ -289,9 +287,9 @@ def key_wash_action(enable_flag, filter_set):
                     if alert.title_contains("成功"):
                         log.info("保存正则模版成功")
                         # 切换到节点iframe
-                        browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                        browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                         # 切换到操作配置iframe
-                        browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("OptIframe")))
+                        browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("OptIframe")))
                         # 切换到运算配置iframe
                         browser.switch_to.frame(
                             browser.find_element(By.XPATH, "//iframe[contains(@src,'operateVar.html')]"))
@@ -300,7 +298,7 @@ def key_wash_action(enable_flag, filter_set):
                             browser.find_element(By.XPATH, "//iframe[contains(@src,'operateCfgWash.html')]"))
                     else:
                         log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-                    set_global_var("resultMsg", msg, False)
+                    gbl.temp.set("ResultMsg", msg)
                 else:
                     # 返回上层iframe
                     browser.switch_to.parent_frame()

@@ -39,7 +39,7 @@ from src.main.python.core.app.VisualModeler.process.node.oprt.rightOpt import op
 from src.main.python.core.app.VisualModeler.process.node.control.nodeControl import NodeControl
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.alertBox import BeAlertBox
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
@@ -47,7 +47,7 @@ class Node:
 
     def __init__(self, node_type, node_name):
 
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.node_type = node_type
         self.original_node_name = node_name
         wait = WebDriverWait(self.browser, 30)
@@ -63,52 +63,52 @@ class Node:
         page_wait()
 
         if self.node_type == "指令节点":
-            set_global_var("NodeIframe", "//iframe[contains(@src,'./node/cmdNode.html')]")
+            gbl.service.set("NodeIframe", "//iframe[contains(@src,'./node/cmdNode.html')]")
         elif self.node_type == "通用节点":
-            set_global_var("NodeIframe", "//iframe[contains(@src,'./node/usualNode.html')]")
+            gbl.service.set("NodeIframe", "//iframe[contains(@src,'./node/usualNode.html')]")
         elif self.node_type == "文件节点":
-            set_global_var("NodeIframe", "//iframe[contains(@src,'./node/fileNode.html')]")
+            gbl.service.set("NodeIframe", "//iframe[contains(@src,'./node/fileNode.html')]")
         elif self.node_type == "Sql节点":
-            set_global_var("NodeIframe", "//iframe[contains(@src,'./node/sqlNode.html')]")
+            gbl.service.set("NodeIframe", "//iframe[contains(@src,'./node/sqlNode.html')]")
         elif self.node_type == "指令模版节点":
-            set_global_var("NodeIframe", "//iframe[contains(@src,'./node/cmdTemplateNode.html')]")
+            gbl.service.set("NodeIframe", "//iframe[contains(@src,'./node/cmdTemplateNode.html')]")
         elif self.node_type == "数据拼盘节点":
-            set_global_var("NodeIframe", "//iframe[contains(@src,'./node/edataCustomNode.html')]")
+            gbl.service.set("NodeIframe", "//iframe[contains(@src,'./node/edataCustomNode.html')]")
         elif self.node_type == "数据处理节点":
-            set_global_var("NodeIframe", "//iframe[contains(@src,'./node/dataHandleNode.html')]")
+            gbl.service.set("NodeIframe", "//iframe[contains(@src,'./node/dataHandleNode.html')]")
         elif self.node_type == "可视化操作模拟节点":
-            set_global_var("NodeIframe", "//iframe[contains(@src,'./node/crawlerNode.html')]")
+            gbl.service.set("NodeIframe", "//iframe[contains(@src,'./node/crawlerNode.html')]")
         elif self.node_type == "脚本节点":
-            set_global_var("NodeIframe", "//iframe[contains(@src,'./node/scriptNode.html')]")
+            gbl.service.set("NodeIframe", "//iframe[contains(@src,'./node/scriptNode.html')]")
         elif self.node_type == "接口节点":
-            set_global_var("NodeIframe", "//iframe[contains(@src,'./node/portNode.html')]")
+            gbl.service.set("NodeIframe", "//iframe[contains(@src,'./node/portNode.html')]")
         elif self.node_type == "报表节点":
-            set_global_var("NodeIframe", "//iframe[contains(@src,'./node/reportNode.html')]")
+            gbl.service.set("NodeIframe", "//iframe[contains(@src,'./node/reportNode.html')]")
         elif self.node_type == "邮件节点":
-            set_global_var("NodeIframe", "//iframe[contains(@src,'./node/emailNode.html')]")
+            gbl.service.set("NodeIframe", "//iframe[contains(@src,'./node/emailNode.html')]")
         elif self.node_type == "AI节点":
-            set_global_var("NodeIframe", "//iframe[contains(@src,'./node/irNode.html')]")
+            gbl.service.set("NodeIframe", "//iframe[contains(@src,'./node/irNode.html')]")
         elif self.node_type == "OCR节点":
-            set_global_var("NodeIframe", "//iframe[contains(@src,'./node/ocrNode.html')]")
+            gbl.service.set("NodeIframe", "//iframe[contains(@src,'./node/ocrNode.html')]")
         elif self.node_type == "信息处理节点":
-            set_global_var("NodeIframe", "//iframe[contains(@src,'./node/nodeInfoCfg.html')]")
+            gbl.service.set("NodeIframe", "//iframe[contains(@src,'./node/nodeInfoCfg.html')]")
         elif self.node_type == "数据接入节点":
-            set_global_var("NodeIframe", "//iframe[contains(@src,'./node/dataAccessNode.html')]")
+            gbl.service.set("NodeIframe", "//iframe[contains(@src,'./node/dataAccessNode.html')]")
         else:
             raise KeyError("不支持的节点类型: {0}".format(self.node_type))
 
         # 控制配置页面iframe
-        set_global_var("ControlIframe", "//iframe[contains(@src,'controlCfg.html')]")
+        gbl.service.set("ControlIframe", "//iframe[contains(@src,'controlCfg.html')]")
         # 操作配置页面iframe
-        set_global_var("OptIframe", "//iframe[contains(@src,'operateNodeCfg.html')]")
+        gbl.service.set("OptIframe", "//iframe[contains(@src,'operateNodeCfg.html')]")
         # 爬虫配置页面iframe
-        set_global_var("CrawlerIframe", "//iframe[contains(@src,'busiCrawlerNode.html')]")
+        gbl.service.set("CrawlerIframe", "//iframe[contains(@src,'busiCrawlerNode.html')]")
 
     def business_conf(self, **kwargs):
 
         # 切换到节点iframe
         wait = WebDriverWait(self.browser, 30)
-        wait.until(ec.frame_to_be_available_and_switch_to_it((By.XPATH, get_global_var("NodeIframe"))))
+        wait.until(ec.frame_to_be_available_and_switch_to_it((By.XPATH, gbl.service.get("NodeIframe"))))
         sleep(1)
 
         # node_name返回修改后的节点名，或者空，为空则使用原节点名称
@@ -348,6 +348,9 @@ class Node:
                 log.info("节点名称有变动，重新保存节点描述")
                 page_wait()
                 sleep(1)
+                wait = WebDriverWait(self.browser, 30)
+                wait.until(ec.element_to_be_clickable((
+                    By.XPATH, "//*[contains(@class, 'GooFlow_item')]//*[text()='{0}']".format(node_name))))
                 self.browser.find_element(
                     By.XPATH, "//*[contains(@class, 'GooFlow_item')]//*[text()='{0}']".format(node_name)).click()
                 sleep(1)
@@ -361,14 +364,14 @@ class Node:
                 self.browser.find_element(By.XPATH, "//*[@id='node_desc_text']").clear()
                 self.browser.find_element(By.XPATH, "//*[@id='node_desc_text']").send_keys(node_name + "_节点说明")
                 # 保存节点描述
-                self.browser.find_element(By.XPATH, "//*[@onclick='node_desc_save();']//*[text()='保存']").click()
+                self.browser.find_element(By.XPATH, "//*[@onclick='node_desc_save();']").click()
                 alert = BeAlertBox()
                 msg = alert.get_msg()
                 if alert.title_contains("成功"):
                     log.info("设置节点描述信息")
                 else:
                     log.warning("设置节点描述失败，失败提示: {0}".format(msg))
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
                 self.browser.find_element(
                     By.XPATH, "//*[@id='node_desc_div']//*[contains(text(),'说明')]/following-sibling::div[1]/a").click()
         else:
@@ -383,12 +386,12 @@ class Node:
             log.info("保存流程图成功")
         else:
             log.warning("保存流程图失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def fetch_conf(self, **kwargs):
         # 切换到节点iframe
         wait = WebDriverWait(self.browser, 30)
-        wait.until(ec.frame_to_be_available_and_switch_to_it((By.XPATH, get_global_var("NodeIframe"))))
+        wait.until(ec.frame_to_be_available_and_switch_to_it((By.XPATH, gbl.service.get("NodeIframe"))))
         page_wait()
         self.browser.find_element(By.XPATH, "//*[@class='tabs']//*[text()='取数配置']").click()
         sleep(1)
@@ -477,11 +480,11 @@ class Node:
     def control_conf(self, **kwargs):
 
         # 切换到节点iframe
-        self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+        self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
         # 点击控制配置
         self.browser.find_element(By.XPATH, "//*[@class='tabs']//*[text()='控制配置']").click()
         # 切换到控制配置iframe
-        self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("ControlIframe")))
+        self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("ControlIframe")))
         sleep(1)
         node_control = NodeControl()
 
@@ -516,10 +519,10 @@ class Node:
 
     def operate_conf(self, array):
         # 切换到节点iframe
-        self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+        self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
         # 点击操作配置
         self.browser.find_element(By.XPATH, "//*[@class='tabs']//*[text()='操作配置']").click()
         # 切换到操作配置iframe
-        self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("OptIframe")))
+        self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("OptIframe")))
         sleep(1)
         opt_action(array=array)

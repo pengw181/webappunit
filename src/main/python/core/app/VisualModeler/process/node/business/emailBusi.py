@@ -14,9 +14,10 @@ from src.main.python.lib.regular import RegularCube
 from src.main.python.lib.dateUtil import set_calendar
 from src.main.python.lib.upload import upload
 from src.main.python.lib.pageMaskWait import page_wait
+from src.main.python.lib.tableData import get_table_data
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def email_business(node_name, mode, params_set):
@@ -179,7 +180,7 @@ def email_business(node_name, mode, params_set):
         }
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     sleep(2)
     # 设置节点名称
     if node_name:
@@ -238,7 +239,7 @@ def email_business(node_name, mode, params_set):
         log.info("保存业务配置成功")
     else:
         log.warning("保存业务配置失败，失败提示: {0}".format(msg))
-    set_global_var("ResultMsg", msg, False)
+    gbl.temp.set("ResultMsg", msg)
 
     # 刷新页面，返回画流程图
     browser.refresh()
@@ -260,7 +261,7 @@ def email_receive(receiver_email, begin_time, end_time, receiver, sender, email_
     :param storage: 存储附件，字典，非必填
     :param storage_path: 存储附件目录
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     page_wait()
     # 切换到接收模式配置iframe
     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[contains(@src,'emailReceive.html')]"))
@@ -352,10 +353,7 @@ def email_receive(receiver_email, begin_time, end_time, receiver, sender, email_
             browser.switch_to.frame(
                 browser.find_element(By.XPATH, "//iframe[contains(@src,'operateWashRegexBox.html')]"))
             regular = receiver.get("值")
-            if regular.get("高级模式") == "是":
-                advance_mode = True
-            else:
-                advance_mode = False
+            advance_mode = True if regular.get("高级模式") == "是" else False
             regular_cube = RegularCube()
             regular_cube.setRegular(set_type=regular.get("设置方式"), regular_name=regular.get("正则模版名称"),
                                     advance_mode=advance_mode, regular=regular.get("标签配置"),
@@ -366,14 +364,14 @@ def email_receive(receiver_email, begin_time, end_time, receiver, sender, email_
                 if alert.title_contains("成功"):
                     log.info("保存正则模版成功")
                     # 切换到节点iframe
-                    browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                    browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                     # 切换到业务配置iframe
                     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[@id='busi_node']"))
                     # 切换到接收模式配置iframe
                     browser.switch_to.frame(browser.find_element(By.XPATH, "//*[contains(@src,'emailReceive.html')]"))
                 else:
                     log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-                set_global_var("resultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
             else:
                 # 返回上层iframe
                 browser.switch_to.parent_frame()
@@ -410,10 +408,7 @@ def email_receive(receiver_email, begin_time, end_time, receiver, sender, email_
             # 切换到正则配置iframe
             browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[contains(@src,'operateWashRegexBox.html')]"))
             regular = sender.get("值")
-            if regular.get("高级模式") == "是":
-                advance_mode = True
-            else:
-                advance_mode = False
+            advance_mode = True if regular.get("高级模式") == "是" else False
             regular_cube = RegularCube()
             regular_cube.setRegular(set_type=regular.get("设置方式"), regular_name=regular.get("正则模版名称"),
                                     advance_mode=advance_mode, regular=regular.get("标签配置"),
@@ -424,7 +419,7 @@ def email_receive(receiver_email, begin_time, end_time, receiver, sender, email_
                 if alert.title_contains("成功"):
                     log.info("保存正则模版成功")
                     # 切换到节点iframe
-                    browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                    browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                     # 切换到业务配置iframe
                     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[@id='busi_node']"))
                     # 切换到接收模式配置iframe
@@ -432,7 +427,7 @@ def email_receive(receiver_email, begin_time, end_time, receiver, sender, email_
                         browser.find_element(By.XPATH, "//*[contains(@src,'emailReceive.html')]"))
                 else:
                     log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-                set_global_var("resultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
             else:
                 # 返回上层iframe
                 browser.switch_to.parent_frame()
@@ -470,10 +465,7 @@ def email_receive(receiver_email, begin_time, end_time, receiver, sender, email_
             browser.switch_to.frame(
                 browser.find_element(By.XPATH, "//iframe[contains(@src,'operateWashRegexBox.html')]"))
             regular = email_title.get("值")
-            if regular.get("高级模式") == "是":
-                advance_mode = True
-            else:
-                advance_mode = False
+            advance_mode = True if regular.get("高级模式") == "是" else False
             regular_cube = RegularCube()
             regular_cube.setRegular(set_type=regular.get("设置方式"), regular_name=regular.get("正则模版名称"),
                                     advance_mode=advance_mode, regular=regular.get("标签配置"),
@@ -484,14 +476,14 @@ def email_receive(receiver_email, begin_time, end_time, receiver, sender, email_
                 if alert.title_contains("成功"):
                     log.info("保存正则模版成功")
                     # 切换到节点iframe
-                    browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                    browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                     # 切换到业务配置iframe
                     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[@id='busi_node']"))
                     # 切换到接收模式配置iframe
                     browser.switch_to.frame(browser.find_element(By.XPATH, "//*[contains(@src,'emailReceive.html')]"))
                 else:
                     log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-                set_global_var("resultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
             else:
                 # 返回上层iframe
                 browser.switch_to.parent_frame()
@@ -529,10 +521,7 @@ def email_receive(receiver_email, begin_time, end_time, receiver, sender, email_
             browser.switch_to.frame(
                 browser.find_element(By.XPATH, "//iframe[contains(@src,'operateWashRegexBox.html')]"))
             regular = email_content.get("值")
-            if regular.get("高级模式") == "是":
-                advance_mode = True
-            else:
-                advance_mode = False
+            advance_mode = True if regular.get("高级模式") == "是" else False
             regular_cube = RegularCube()
             regular_cube.setRegular(set_type=regular.get("设置方式"), regular_name=regular.get("正则模版名称"),
                                     advance_mode=advance_mode, regular=regular.get("标签配置"),
@@ -543,14 +532,14 @@ def email_receive(receiver_email, begin_time, end_time, receiver, sender, email_
                 if alert.title_contains("成功"):
                     log.info("保存正则模版成功")
                     # 切换到节点iframe
-                    browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                    browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                     # 切换到业务配置iframe
                     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[@id='busi_node']"))
                     # 切换到接收模式配置iframe
                     browser.switch_to.frame(browser.find_element(By.XPATH, "//*[contains(@src,'emailReceive.html')]"))
                 else:
                     log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-                set_global_var("resultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
             else:
                 # 返回上层iframe
                 browser.switch_to.parent_frame()
@@ -588,10 +577,7 @@ def email_receive(receiver_email, begin_time, end_time, receiver, sender, email_
             browser.switch_to.frame(
                 browser.find_element(By.XPATH, "//iframe[contains(@src,'operateWashRegexBox.html')]"))
             regular = attach.get("值")
-            if regular.get("高级模式") == "是":
-                advance_mode = True
-            else:
-                advance_mode = False
+            advance_mode = True if regular.get("高级模式") == "是" else False
             regular_cube = RegularCube()
             regular_cube.setRegular(set_type=regular.get("设置方式"), regular_name=regular.get("正则模版名称"),
                                     advance_mode=advance_mode, regular=regular.get("标签配置"),
@@ -602,7 +588,7 @@ def email_receive(receiver_email, begin_time, end_time, receiver, sender, email_
                 if alert.title_contains("成功"):
                     log.info("保存正则模版成功")
                     # 切换到节点iframe
-                    browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                    browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                     # 切换到业务配置iframe
                     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[@id='busi_node']"))
                     # 切换到接收模式配置iframe
@@ -610,7 +596,7 @@ def email_receive(receiver_email, begin_time, end_time, receiver, sender, email_
                         browser.find_element(By.XPATH, "//*[contains(@src,'emailReceive.html')]"))
                 else:
                     log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-                set_global_var("resultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
             else:
                 # 返回上层iframe
                 browser.switch_to.parent_frame()
@@ -676,7 +662,7 @@ def email_send(sender, receiver, email_title, email_content, cc, attach):
     :param cc: 抄送人，非必填，可选择，可变量
     :param attach: 附件，非必填，字典
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 切换到信息推送iframe
     page_wait()
     browser.switch_to.frame(browser.find_element(By.XPATH, "//*[contains(@src,'emailSend.html')]"))
@@ -692,38 +678,76 @@ def email_send(sender, receiver, email_title, email_content, cc, attach):
         sleep(1)
 
     # 收件人
+    """
+    {
+        "类型": "自定义",
+        "方式": "请选择",
+        "值": ["xxx", "xxx"]
+    }
+    
+    {
+        "类型": "关键字对应".
+        "关键字类型": "中转商",
+        "关键值": "移动"
+    }
+    """
     if receiver:
-        # 类型
-        if receiver.__contains__("类型"):
-            receiver_type = receiver.get("类型")
-            if receiver_type == "自定义":
-                browser.find_element(By.XPATH, "//*[@id='getrecipientsBtn_1']").click()
+        # 类型：自定义，关键字对应
+        receiver_type = receiver.get("类型")
+        log.info("设置收件人类型: {0}".format(receiver_type))
+        if receiver_type == "自定义":
+            browser.find_element(By.XPATH, "//*[@id='getrecipientsBtn_1']").click()
+
+            # 方式：请选择，变量
+            choose_type = receiver.get("方式")
+            browser.find_element(By.XPATH, "//*[@id='selUser1']/following-sibling::span//input[1]").click()
+            browser.find_element(By.XPATH, "//*[contains(@id,'selUser1') and text()='{0}']".format(choose_type)).click()
+            log.info("设置收件人方式: {0}".format(choose_type))
+            sleep(1)
+
+            # 值
+            receiver_obj = receiver.get("值")
+            if choose_type == "请选择":
+                browser.find_element(By.XPATH, "//*[@id='recipients_sel']/following-sibling::span//a").click()
+                for i in receiver_obj:
+                    browser.find_element(By.XPATH,
+                                         "//*[contains(@id,'recipients_sel') and text()='{0}']".format(i)).click()
+                # 再点击一次，隐藏下拉框
+                browser.find_element(By.XPATH, "//*[@id='recipients_sel']/following-sibling::span//a").click()
+                log.info("设置收件人: {0}".format(",".join(receiver_obj)))
             else:
-                browser.find_element(By.XPATH, "//*[@id='getrecipientsBtn_2']").click()
-            log.info("设置收件人类型: {0}".format(receiver_type))
-
-        # 方式。因无法通过js获取方式下拉框的值，所以方式设置为必须参数
-        choose_type = receiver.get("方式")
-        browser.find_element(By.XPATH, "//*[@id='selUser1']/following-sibling::span//input[1]").click()
-        browser.find_element(By.XPATH, "//*[contains(@id,'selUser1') and text()='{0}']".format(choose_type)).click()
-        log.info("设置收件人方式: {0}".format(choose_type))
-        sleep(1)
-
-        # 值
-        receiver_obj = receiver.get("值")
-        if choose_type == "请选择":
-            browser.find_element(By.XPATH, "//*[@id='recipients_sel']/following-sibling::span//a").click()
-            for i in receiver_obj:
-                browser.find_element(By.XPATH, "//*[contains(@id,'recipients_sel') and text()='{0}']".format(i)).click()
-            # 再点击一次，隐藏下拉框
-            browser.find_element(By.XPATH, "//*[@id='recipients_sel']/following-sibling::span//a").click()
-            log.info("设置收件人: {0}".format(",".join(receiver_obj)))
+                # 变量
+                browser.find_element(By.XPATH, "//*[@id='dataH_recipientsName']/following-sibling::span//a").click()
+                choose_var(var_name=receiver_obj)
+                log.info("设置收件人: {0}".format(receiver_obj))
         else:
-            # 自定义
-            browser.find_element(By.XPATH, "//*[@id='dataH_recipientsName']/following-sibling::span//a").click()
-            choose_var(var_name=receiver_obj)
-            log.info("设置收件人: {0}".format(receiver_obj))
-        sleep(1)
+            browser.find_element(By.XPATH, "//*[@id='getrecipientsBtn_2']").click()
+
+            # 关键字类型
+            info_type = receiver.get("关键字类型")
+            browser.find_element(By.XPATH, "//*[@id='infoTypeId']/following-sibling::span//input[1]").click()
+            browser.find_element(By.XPATH, "//*[contains(@id,'infoTypeId') and text()='{0}']".format(info_type)).click()
+            log.info("设置关键字类型: {0}".format(info_type))
+            sleep(1)
+
+            # 关键值
+            keyword = receiver.get("关键值")
+            input_xpath = "//*[@name='recipients_var']/preceding-sibling::input[1]"
+            set_text_enable_var(input_xpath=input_xpath, msg=keyword)
+            sleep(1)
+            # 查看详细信息
+            browser.find_element(By.XPATH, "//*[@onclick='getKeyEmailDetail()']").click()
+            wait = WebDriverWait(browser, 30)
+            wait.until(ec.frame_to_be_available_and_switch_to_it((
+                By.XPATH, "//iframe[contains(@src, 'emailAddrList.html')]")))
+            sleep(2)
+            # 返回列表内容
+            data_table_xpath = "//*[@id='levelMemberDiv']//*[@class='datagrid-view2']//*[@class='datagrid-body']"
+            get_table_data(data_table_xpath=data_table_xpath)
+            # 关闭小窗口
+            browser.switch_to.parent_frame()
+            browser.find_element(
+                By.XPATH, "//*[@id='email_send_form']/following::div//*[@class='panel-tool-close']").click()
 
     # 抄送人
     if cc:
@@ -826,7 +850,7 @@ def attach_opt(opt, attach):
         "附件类型": "jpeg"
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     attach_obj = browser.find_element(By.XPATH, "//*[@onclick='toAddAttachPage()']//*[text()='添加']")
     browser.execute_script("arguments[0].scrollIntoView(true);", attach_obj)
     # 操作类型
@@ -863,8 +887,6 @@ def attach_opt(opt, attach):
             attach_build(attach_tile=attach.get("附件标题"), attach_content=attach.get("附件内容"),
                          attach_type=attach.get("附件类型"))
         elif attach_source == "本地上传":
-            # browser.find_element(By.XPATH, "//*[contains(@for,'filebox_file_id')]").click()
-            # sleep(1)
             upload(file_name=attach.get("文件名"))
             sleep(1)
         else:
@@ -887,10 +909,10 @@ def attach_opt(opt, attach):
         log.info("保存附件成功")
     else:
         log.warning("保存附件失败，失败提示: {0}".format(msg))
-    set_global_var("ResultMsg", msg, False)
+    gbl.temp.set("ResultMsg", msg)
 
     # 切换到节点iframe
-    browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+    browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
     # 切换到业务配置iframe
     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[@id='busi_node']"))
     # 切换到发送模式配置iframe
@@ -904,7 +926,7 @@ def attach_build(attach_tile, attach_content, attach_type):
     :param attach_content: 附件正文, 添加时必填，修改非必填
     :param attach_type: 附件类型, 非必填
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     log.info("设置动态生成附件")
     # 附件标题
     if attach_tile:
@@ -938,7 +960,7 @@ def attach_remote_up(storage_type, ftp, use_var, dir_name, filter_type, file_nam
     :param file_name: 文件名/正则配置，必填
     :param file_type: 文件类型，必填
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     log.info("设置远程加载附件")
     # 存储类型
     if storage_type:
@@ -1040,7 +1062,7 @@ def attach_remote_up(storage_type, ftp, use_var, dir_name, filter_type, file_nam
             if alert.title_contains("成功"):
                 log.info("保存正则模版成功")
                 # 切换到节点iframe
-                browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                 # 切换到业务配置iframe
                 browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[@id='busi_node']"))
                 # 切换到接收模式配置iframe
@@ -1057,7 +1079,7 @@ def attach_remote_up(storage_type, ftp, use_var, dir_name, filter_type, file_nam
                         By.XPATH, "//iframe[contains(@src,'/VisualModeler/frame/regexcube/regexpTmplPopUpWin.html')]"))
             else:
                 log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-            set_global_var("resultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
         # 点击确定
         browser.find_element(By.XPATH, "//*[@id='regexp-ok']//*[text()='确定']").click()

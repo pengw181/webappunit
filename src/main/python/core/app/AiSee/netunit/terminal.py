@@ -12,13 +12,13 @@ from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.core.app.AiSee.netunit.menu import choose_menu
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class Terminal(object):
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         choose_menu(menu="统一直连终端配置")
 
         # 切到统一直连终端配置页面
@@ -87,7 +87,7 @@ class Terminal(object):
             else:
                 log.warning("保存配置失败，失败提示: {0}".format(msg))
                 alert.click_ok()
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def update(self, obj_terminal, terminal_name, terminal_type, account_temp, charset, expect_return, fail_return,
                terminal_ip, terminal_port, remark, login_cmd):
@@ -109,7 +109,8 @@ class Terminal(object):
         alert = BeAlertBox(back_iframe=False, timeout=1)
         exist = alert.exist_alert
         if exist:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             # 切换到修改终端页面iframe
             wait = WebDriverWait(self.browser, 30)
@@ -131,7 +132,7 @@ class Terminal(object):
             else:
                 log.warning("保存配置失败，失败提示: {0}".format(msg))
                 alert.click_ok()
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def terminal_page(self, terminal_name, terminal_type, account_temp, charset, expect_return, fail_return,
                       terminal_ip, terminal_port, remark, login_cmd):
@@ -265,7 +266,7 @@ class Terminal(object):
         else:
             log.warning("启动终端【{0}】测试失败，失败提示: {1}".format(terminal_name, msg))
             alert.click_ok()
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def test_all_terminal(self, condition):
         """
@@ -315,4 +316,4 @@ class Terminal(object):
         else:
             log.warning("启动部分终端测试失败，失败提示: {}".format(msg))
             alert.click_ok()
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)

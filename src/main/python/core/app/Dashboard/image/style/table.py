@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException
 from src.main.python.lib.css import change_color
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
@@ -40,7 +40,7 @@ def table_style(theme, custom_bg_color, bg_color_rgb, show_title, title_alignmen
     }
     """
     tab_div_xpath = "//*[@class='dlg-tabsDiv']"
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     action = ActionChains(browser)
     # 主题样式
     if theme:

@@ -14,7 +14,7 @@ from src.main.python.lib.loadDictionary import load_dictionary
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.wrap import Wrap
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
@@ -22,7 +22,7 @@ from src.main.python.lib.logger import log
 class Dictionary:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         page_wait(5)
         wait = WebDriverWait(self.browser, 10)
         wait.until(ec.element_to_be_clickable((By.XPATH, "//*[text()='字典管理']")))
@@ -66,10 +66,11 @@ class Dictionary:
                     log.info("保存字典【{0}】成功".format(dict_name))
                 else:
                     log.warning("保存字典失败，失败提示: {0}".format(msg))
-                set_global_var("ResultMsg", msg, False)
+                toast.waitUntil()
+                gbl.temp.set("ResultMsg", msg)
             else:
                 log.warning("保存字典失败，失败提示: {0}".format(msg))
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
             if save_success:
                 num += 1
                 if dictionary != dict_list[-1]:
@@ -117,10 +118,10 @@ class Dictionary:
                 toast.waitUntil()
             else:
                 log.warning("保存字典失败，失败提示: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
         else:
             log.warning("保存字典失败，失败提示: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def dict_page(self, dict_name, catalog, interface, dict_item, row_xpath):
         """
@@ -202,10 +203,10 @@ class Dictionary:
                 log.info("删除字典图【{0}】成功".format(dict_name))
             else:
                 log.info("删字典【{0}】失败，失败原因: {1}".format(dict_name, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
         else:
             log.error("删除字典【{0}】失败，失败原因{1}".format(dict_name, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def clear_dict(self, dict_name, fuzzy_match=False):
         """
@@ -223,48 +224,48 @@ class Dictionary:
         else:
             record_element = self.browser.find_elements(
                 By.XPATH, "//*[@field='dictName']//div[text()='{0}']".format(dict_name))
-        if len(record_element) > 0:
-            exist_data = True
-
-            while exist_data:
-                pe = record_element[0]
-                search_result = pe.text
-                pe.click()
-                log.info("选择: {0}".format(search_result))
-                # 点击删除
-                self.browser.find_element(By.XPATH, "//*[@title='删除字典']").click()
-                alert = BeAlertBox(timeout=1, back_iframe=False)
-                msg = alert.get_msg()
-                if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
-                    alert.click_ok()
-                    toast = Toast()
-                    if toast.exist:
-                        msg = toast.get_msg()
-                        if not toast.msg_contains("删除成功"):
-                            log.info("删除字典失败，失败原因: {0}".format(msg))
-                            set_global_var("ResultMsg", msg, False)
-                            break
-
-                        log.info("{0} {1}".format(search_result, msg))
-                        toast.waitUntil()
-                        if not fuzzy_match:
-                            break
-
-                        # 重新获取页面查询结果
-                        record_element = self.browser.find_elements(
-                            By.XPATH,
-                            "//*[@field='dictName']//div[starts-with(text(),'{0}')]".format(dict_name))
-                        if len(record_element) > 0:
-                            exist_data = True
-                        else:
-                            # 查询结果为空,修改exist_data为False，退出循环
-                            log.info("数据清理完成")
-                            exist_data = False
-                else:
-                    # 无权操作
-                    log.warning("清理失败，失败提示: {0}".format(msg))
-                    set_global_var("ResultMsg", msg, False)
-                    break
-        else:
+        if len(record_element) == 0:
             # 查询结果为空,结束处理
             log.info("查询不到满足条件的数据，无需清理")
+            return
+
+        exist_data = True
+        while exist_data:
+            pe = record_element[0]
+            search_result = pe.text
+            pe.click()
+            log.info("选择: {0}".format(search_result))
+            # 点击删除
+            self.browser.find_element(By.XPATH, "//*[@title='删除字典']").click()
+            alert = BeAlertBox(timeout=1, back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
+                alert.click_ok()
+                toast = Toast()
+                if toast.exist:
+                    msg = toast.get_msg()
+                    if not toast.msg_contains("删除成功"):
+                        log.info("删除字典失败，失败原因: {0}".format(msg))
+                        gbl.temp.set("ResultMsg", msg)
+                        break
+
+                    log.info("{0} {1}".format(search_result, msg))
+                    toast.waitUntil()
+                    if not fuzzy_match:
+                        break
+
+                    # 重新获取页面查询结果
+                    record_element = self.browser.find_elements(
+                        By.XPATH,
+                        "//*[@field='dictName']//div[starts-with(text(),'{0}')]".format(dict_name))
+                    if len(record_element) > 0:
+                        exist_data = True
+                    else:
+                        # 查询结果为空,修改exist_data为False，退出循环
+                        log.info("数据清理完成")
+                        exist_data = False
+            else:
+                # 无权操作
+                log.warning("清理失败，失败提示: {0}".format(msg))
+                gbl.temp.set("ResultMsg", msg)
+                break

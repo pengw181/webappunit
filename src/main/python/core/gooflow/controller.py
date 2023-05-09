@@ -2,7 +2,7 @@
 # @Author: peng wei
 # @Time: 2021/9/13 下午5:35
 
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.core.controller.VisualModeler.servers import actions as visual_actions
 from src.main.python.core.controller.Crawler.servers import actions as crawler_actions
 from src.main.python.core.controller.AiSee.servers import actions as aisee_actions
@@ -15,7 +15,7 @@ def serverRun(func, param):
     :param func: 操作
     :param param: 参数
     """
-    application = get_global_var("Application")
+    application = gbl.service.get("application")
 
     if application == "VisualModeler":
         run_flag = visual_actions(func, param)

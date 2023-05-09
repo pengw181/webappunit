@@ -2,11 +2,13 @@
 # @Author: peng wei
 # @Time: 2021/12/24 下午3:07
 
+import json
 from time import sleep
 from datetime import datetime
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver import ActionChains
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.input import set_textarea
@@ -16,7 +18,8 @@ from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.pagination import Pagination
 from src.main.python.lib.dateUtil import set_calendar, set_laydate
 from src.main.python.lib.dateCalculation import calculation
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.positionPanel import getPanelXpath
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
@@ -25,7 +28,7 @@ class AlarmRule:
     def __init__(self):
         self.rule_name = None
         self.upperOrLower = None
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         # 进入菜单
         choose_menu("告警配置-告警规则")
         page_wait()
@@ -38,17 +41,78 @@ class AlarmRule:
         page_wait()
         sleep(1)
 
-    def choose(self, rule_name):
+    def search(self, query, need_choose=False):
         """
-        :param rule_name: 告警规则名称
+        :param query: 查询条件，字典
+        :param need_choose: True/False
         """
-        input_ele = self.browser.find_element(By.XPATH, "//*[@name='alarmRuleName']/preceding-sibling::input")
-        input_ele.clear()
-        input_ele.send_keys(rule_name)
-        self.browser.find_element(By.XPATH, "//span[text()='查询']").click()
+        if not isinstance(query, dict):
+            raise TypeError("查询条件需要是字典格式")
+        log.info("查询条件: {0}".format(json.dumps(query, ensure_ascii=False)))
+        select_item = None
+
+        # 告警计划名称
+        if query.__contains__("告警计划名称"):
+            plan_name = query.get("告警计划名称")
+            self.browser.find_element(By.XPATH, "//*[@name='alarmPlanName']/preceding-sibling::input[1]").clear()
+            self.browser.find_element(By.XPATH, "//*[@name='alarmPlanName']/preceding-sibling::input[1]").send_keys(
+                plan_name)
+
+        # 告警规则名称
+        if query.__contains__("告警规则名称"):
+            rule_name = query.get("告警规则名称")
+            self.browser.find_element(By.XPATH, "//*[@name='alarmRuleName']/preceding-sibling::input[1]").clear()
+            self.browser.find_element(By.XPATH, "//*[@name='alarmRuleName']/preceding-sibling::input[1]").send_keys(
+                rule_name)
+            select_item = rule_name
+
+        # 状态
+        if query.__contains__("状态"):
+            alarm_status = query.get("状态")
+            self.browser.find_element(By.XPATH, "//*[@name='alarmStatus']/preceding-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(alarm_status)).click()
+
+        # 创建人
+        if query.__contains__("创建人"):
+            creator = query.get("创建人")
+            self.browser.find_element(By.XPATH, "//*[@name='creator']/preceding-sibling::input[1]").clear()
+            self.browser.find_element(By.XPATH, "//*[@name='creator']/preceding-sibling::input[1]").send_keys(
+                creator)
+
+        # 告警等级
+        if query.__contains__("告警等级"):
+            data_level = query.get("告警等级")
+            self.browser.find_element(By.XPATH, "//*[@name='alarmLevelId']/preceding-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(data_level)).click()
+
+        # 告警类型
+        if query.__contains__("告警类型"):
+            alarm_type = query.get("告警类型")
+            self.browser.find_element(By.XPATH, "//*[@name='alarmTypeId']/preceding-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(alarm_type)).click()
+
+        # 查询
+        self.browser.find_element(By.XPATH, "//*[@funcid='AlarmPlatform_rule_query']").click()
         page_wait()
-        self.browser.find_element(By.XPATH, "//*[@field='alarmRuleName']//*[text()='{}']".format(rule_name)).click()
-        log.info("已选择告警规则: {}".format(rule_name))
+        alert = BeAlertBox(timeout=1, back_iframe=False)
+        if alert.exist_alert:
+            msg = alert.get_msg()
+            log.info("弹出框返回: {0}".format(msg))
+            gbl.temp.set("ResultMsg", msg)
+            return
+        if need_choose:
+            if select_item:
+                try:
+                    self.browser.find_element(
+                        By.XPATH, "//*[@field='alarmRuleName']//*[text()='{0}']".format(select_item)).click()
+                except NoSuchElementException:
+                    raise KeyError("未找到匹配数据")
+                log.info("选择: {0}".format(select_item))
+            else:
+                raise KeyError("条件不足，无法选择数据")
 
     def add(self, alarm_type, alarm_plan, basic_conf, dimension_conf, filter_conf, result_conf, storage_conf):
         """
@@ -60,7 +124,7 @@ class AlarmRule:
         :param result_conf: 告警结果配置
         :param storage_conf: 告警存储配置
         """
-        self.browser.find_element(By.XPATH, "//*[@id='addBtn']//*[text()='添加']").click()
+        self.browser.find_element(By.XPATH, "//*[@id='addBtn']").click()
         page_wait()
         self.browser.switch_to.parent_frame()
         wait = WebDriverWait(self.browser, 10)
@@ -102,24 +166,24 @@ class AlarmRule:
             log.info("数据 {0} 添加成功".format(self.rule_name))
         else:
             log.warning("数据 {0} 添加失败，失败提示: {1}".format(self.rule_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
-    def update(self, obj, basic_conf, dimension_conf, filter_conf, result_conf, storage_conf):
+    def update(self, rule, basic_conf, dimension_conf, filter_conf, result_conf, storage_conf):
         """
-        :param obj: 规则名称
+        :param rule: 告警规则名称
         :param basic_conf: 基本信息配置
         :param dimension_conf: 告警维度配置
         :param filter_conf: 过滤条件配置
         :param result_conf: 告警结果配置
         :param storage_conf: 告警存储配置
         """
-        log.info("开始修改数据")
-        self.choose(obj)
-        self.browser.find_element(By.XPATH, "//*[text()='修改']").click()
+        self.search(query={"告警规则名称": rule}, need_choose=True)
+        self.browser.find_element(By.XPATH, "//*[@id='editBtn']").click()
 
         alert = BeAlertBox(timeout=3, back_iframe=False)
         if alert.exist_alert:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
             return
         else:
             self.browser.switch_to.parent_frame()
@@ -134,10 +198,10 @@ class AlarmRule:
             alert = BeAlertBox()
             msg = alert.get_msg()
             if alert.title_contains("修改成功"):
-                log.info("{0} 修改成功".format(obj))
+                log.info("{0} 修改成功".format(rule))
             else:
-                log.warning("{0} 修改失败，失败提示: {1}".format(obj, msg))
-            set_global_var("ResultMsg", msg, False)
+                log.warning("{0} 修改失败，失败提示: {1}".format(rule, msg))
+            gbl.temp.set("ResultMsg", msg)
 
     def rule_page(self, basic_conf, dimension_conf, filter_conf, result_conf, storage_conf):
         """
@@ -312,10 +376,7 @@ class AlarmRule:
         # 获取领域勾选状态
         domain_checkbox = self.browser.find_element(By.XPATH, "//*[text()='领域']/..")
         checked_status = domain_checkbox.get_attribute("class")
-        if checked_status.find("checked") > -1:
-            checked_status = True
-        else:
-            checked_status = False
+        checked_status = True if checked_status.find("checked") > -1 else False
 
         # 领域
         if domain:
@@ -402,7 +463,7 @@ class AlarmRule:
                 else:
                     self.upperOrLower = "lower"
                     log.info("表字段小写")
-                set_global_var("UpperOrLower", self.upperOrLower, False)
+                gbl.temp.set("UpperOrLower", self.upperOrLower)
 
                 # 标签类型
                 if tag_type == "公共标签":
@@ -410,7 +471,7 @@ class AlarmRule:
                         By.XPATH, "//*[@id='common_item']/li[@fieldchinesename='{0}']".format(tag_name))
                 else:
                     # 字段标签转换大小写
-                    if get_global_var("UpperOrLower") == "upper":
+                    if gbl.temp.get("UpperOrLower") == "upper":
                         tag_name = tag_name.upper()
                     else:
                         tag_name = tag_name.lower()
@@ -487,7 +548,7 @@ class AlarmRule:
                 agg_threshold = tag_info.get("告警阈值")
 
                 # 字段转换大小写
-                if get_global_var("UpperOrLower") == "upper":
+                if gbl.temp.get("UpperOrLower") == "upper":
                     tag = tag.upper()
                 else:
                     tag = tag.lower()
@@ -578,7 +639,7 @@ class AlarmRule:
             for field in result_field:
 
                 # 字段转换大小写
-                if get_global_var("UpperOrLower") == "upper":
+                if gbl.temp.get("UpperOrLower") == "upper":
                     field = field.upper()
                 else:
                     field = field.lower()
@@ -769,7 +830,7 @@ class AlarmRule:
                     output_field_name = field_rela[1]
 
                     # 字段转换大小写
-                    if get_global_var("UpperOrLower") == "upper":
+                    if gbl.temp.get("UpperOrLower") == "upper":
                         field_name = field_name.upper()
                     else:
                         field_name = field_name.lower()
@@ -792,133 +853,70 @@ class AlarmRule:
                     log.info("将【{0}】映射到【{1}】".format(field_name, output_field_name))
                     sleep(1)
 
+    def _get_current_status(self):
+        """
+        获取当前状态，需要先点击该行
+        :return: True/False
+        """
+        # 先获取所有告警规则行对象，抽取node-id组成数组
+        rule_elements = self.browser.find_elements(
+            By.XPATH, "//tr[contains(@id,'dg_datagrid-row-r') and not(contains(@id,'plan'))]")
+        rule_node_ids = [element.get_attribute("node-id") for element in rule_elements]
+        try:
+            # 判断当前选中行的node-id是在第几行，从而判断状态开关
+            rule = self.browser.find_element(
+                By.XPATH, "//tr[contains(@class,'selected')]")
+            node_id = rule.get_attribute("node-id")
+            i = None
+            for i in range(len(rule_node_ids)):
+                if node_id == rule_node_ids[i]:
+                    break
+            js = 'return $(".easyui-switchbutton")[{0}].checked;'.format(i)
+            current_status = self.browser.execute_script(js)
+        except NoSuchElementException:
+            log.warning("请点击一行告警规则")
+            current_status = False
+        return current_status
+
     def update_status(self, rule_name, set_status, research=True):
         """
-        :param rule_name: 规则名称
+        :param rule_name: 告警规则名称
         :param set_status: 状态，启用/禁用
         :param research: 是否重新查询，默认true
         """
         if research:
-            self.choose(rule_name=rule_name)
+            self.search(query={"告警规则名称": rule_name}, need_choose=True)
 
         # 获取当前状态
         js = 'return $(".easyui-switchbutton")[0].checked;'
         current_status = self.browser.execute_script(js)
         log.info("【状态】勾选状态: {0}".format(current_status))
 
-        if set_status == "启用":
-            if current_status:
-                log.info("{0}已启用".format(rule_name))
-            else:
-                self.browser.find_element(
-                    By.XPATH, "//*[text()='{0}']/../../../following-sibling::td[2]/div/span".format(rule_name)).click()
+        temp = True if set_status == "启用" else False
+        if temp ^ current_status:
+            self.browser.find_element(
+                By.XPATH, "//*[text()='{0}']/../../../following-sibling::td[2]/div/span".format(rule_name)).click()
+            alert = BeAlertBox(back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("确认启用{0}吗|确认禁用{0}吗".format(rule_name), auto_click_ok=False):
+                alert.click_ok()
+                sleep(1)
                 alert = BeAlertBox(back_iframe=False)
                 msg = alert.get_msg()
-                if alert.title_contains("确认启用{0}吗".format(rule_name), auto_click_ok=False):
-                    alert.click_ok()
-                    sleep(1)
-                    alert = BeAlertBox(back_iframe=False)
-                    msg = alert.get_msg()
-                    if alert.title_contains("操作成功"):
-                        log.info("{0} 启用成功".format(rule_name))
-                    else:
-                        log.warning("{0} 启用失败，失败提示: {1}".format(rule_name, msg))
+                if alert.title_contains("操作成功"):
+                    log.info("{0} {1}成功".format(rule_name, set_status))
                 else:
-                    log.warning("{0} 启用失败，失败提示: {1}".format(rule_name, msg))
-                set_global_var("ResultMsg", msg, False)
-        else:
-            if current_status:
-                self.browser.find_element(
-                    By.XPATH, "//*[text()='{0}']/../../../following-sibling::td[2]/div/span".format(rule_name)).click()
-                alert = BeAlertBox(back_iframe=False)
-                msg = alert.get_msg()
-                if alert.title_contains("确认禁用{0}吗".format(rule_name), auto_click_ok=False):
-                    alert.click_ok()
-                    sleep(1)
-                    alert = BeAlertBox(back_iframe=False)
-                    msg = alert.get_msg()
-                    if alert.title_contains("操作成功"):
-                        log.info("{0} 禁用成功".format(rule_name))
-                    else:
-                        log.warning("{0} 禁用失败，失败提示: {1}".format(rule_name, msg))
-                else:
-                    log.warning("{0} 禁用失败，失败提示: {1}".format(rule_name, msg))
-                set_global_var("ResultMsg", msg, False)
+                    log.warning("{0} {1}失败，失败提示: {2}".format(rule_name, set_status, msg))
             else:
-                log.info("{0}未启用".format(rule_name))
-
-    def query(self, query):
-        """
-        :param query: 查询条件
-        """
-        if isinstance(query, dict):
-            # 告警计划名称
-            if query.__contains__("告警计划名称"):
-                alarm_plan_name = query.get("告警计划名称")
-                self.browser.find_element(By.XPATH, "//*[@name='alarmPlanName']/preceding-sibling::input").clear()
-                self.browser.find_element(
-                    By.XPATH, "//*[@name='alarmPlanName']/preceding-sibling::input").send_keys(alarm_plan_name)
-                log.info("告警计划名称输入: {0}".format(alarm_plan_name))
-
-            # 告警规则名称
-            if query.__contains__("告警规则名称"):
-                alarm_rule_name = query.get("告警规则名称")
-                self.browser.find_element(By.XPATH, "//*[@name='alarmRuleName']/preceding-sibling::input").clear()
-                self.browser.find_element(
-                    By.XPATH, "//*[@name='alarmRuleName']/preceding-sibling::input").send_keys(alarm_rule_name)
-                log.info("告警规则名称输入: {0}".format(alarm_rule_name))
-
-            # 状态
-            if query.__contains__("状态"):
-                status = query.get("状态")
-                self.browser.find_element(
-                    By.XPATH, "//*[@textboxname ='alarmStatus']/following-sibling::span//a").click()
-                sleep(1)
-                self.browser.find_element(
-                    By.XPATH, "//*[contains(@id,'_easyui_combobox') and text()='{0}']".format(status)).click()
-                log.info("状态选择: {0}".format(status))
-
-            # 创建人
-            if query.__contains__("创建人"):
-                creator = query.get("创建人")
-                self.browser.find_element(By.XPATH, "//*[@name='creator']/preceding-sibling::input").clear()
-                self.browser.find_element(By.XPATH, "//*[@name='creator']/preceding-sibling::input").send_keys(creator)
-                log.info("创建人输入: {0}".format(creator))
-
-            # 告警等级
-            if query.__contains__("告警等级"):
-                alarm_level = query.get("告警等级")
-                self.browser.find_element(By.XPATH, "//*[@textboxname ='alarmLevelId']/following-sibling::span//a").click()
-                sleep(1)
-                alarm_level_element = self.browser.find_element(
-                    By.XPATH, "//*[contains(@id,'alarmLevelId') and text()='{0}']".format(alarm_level))
-                action = ActionChains(self.browser)
-                action.move_to_element(alarm_level_element).click().perform()
-                log.info("告警等级选择: {0}".format(alarm_level))
-
-            # 告警类型
-            if query.__contains__("告警类型"):
-                alarm_type = query.get("告警类型")
-                self.browser.find_element(By.XPATH, "//*[@textboxname ='alarmTypeId']/following-sibling::span//a").click()
-                sleep(1)
-                self.browser.find_element(
-                    By.XPATH, "//*[contains(@id,'alarmTypeId') and text()='{0}']".format(alarm_type)).click()
-                log.info("告警类型选择: {0}".format(alarm_type))
-
-            # 查询
-            self.browser.find_element(By.XPATH, "//*[@funcid='AlarmPlatform_rule_query']//*[text()='查询']").click()
-            page_wait()
-            sleep(1)
-            return
-        else:
-            raise KeyError("查询条件不是字典")
+                log.warning("{0} {1}失败，失败提示: {2}".format(rule_name, set_status, msg))
+            gbl.temp.set("ResultMsg", msg)
 
     def batch_enable(self, query):
         """
         # 批量将查询后的数据启用
         :param query: 查询条件
         """
-        self.query(query)
+        self.search(query=query, need_choose=False)
         table_xpath = "//*[@id='tb']/following-sibling::div[2]/table"
         p = Pagination(table_xpath)
         p.set_page_size(size=50)
@@ -931,7 +929,7 @@ class AlarmRule:
                 js = 'return $(".easyui-switchbutton")[{0}].checked;'.format(num)
                 current_status = self.browser.execute_script(js)
                 if current_status:
-                    set_global_var("ResultMsg", "操作成功", False)
+                    gbl.temp.set("ResultMsg", "操作成功")
                     if num == len(row_status)-1:
                         break
                     else:
@@ -961,7 +959,7 @@ class AlarmRule:
                     else:
                         log.warning("第{0}行启用失败，失败提示: {1}".format(num+1, msg))
                         break
-                    set_global_var("ResultMsg", msg, False)
+                    gbl.temp.set("ResultMsg", msg)
         else:
             raise Exception("未查询到记录")
 
@@ -970,7 +968,7 @@ class AlarmRule:
         # 批量将查询后的数据禁用
         :param query: 查询条件
         """
-        self.query(query)
+        self.search(query=query, need_choose=False)
         table_xpath = "//*[@id='tb']/following-sibling::div[2]/table"
         p = Pagination(table_xpath)
         p.set_page_size(size=50)
@@ -983,7 +981,7 @@ class AlarmRule:
                 js = 'return $(".easyui-switchbutton")[{0}].checked;'.format(num)
                 current_status = self.browser.execute_script(js)
                 if not current_status:
-                    set_global_var("ResultMsg", "操作成功", False)
+                    gbl.temp.set("ResultMsg", "操作成功")
                     if num == len(row_status)-1:
                         break
                     else:
@@ -1013,17 +1011,16 @@ class AlarmRule:
                     else:
                         log.warning("第{0}行禁用失败，失败提示: {1}".format(num+1, msg))
                         break
-                    set_global_var("ResultMsg", msg, False)
+                    gbl.temp.set("ResultMsg", msg)
         else:
             raise Exception("未查询到记录")
 
     def delete(self, rule_name):
         """
-        :param rule_name: 规则名称
+        :param rule_name: 告警规则名称
         """
-        log.info("开始删除数据")
-        self.choose(rule_name)
-        self.browser.find_element(By.XPATH, "//*[text()='删除']").click()
+        self.search(query={"告警规则名称": rule_name}, need_choose=True)
+        self.browser.find_element(By.XPATH, "//*[@id='deleteBtn']").click()
 
         alert = BeAlertBox(back_iframe=False)
         msg = alert.get_msg()
@@ -1038,17 +1035,17 @@ class AlarmRule:
                 log.warning("{0} 删除失败，失败提示: {1}".format(rule_name, msg))
         else:
             log.warning("{0} 删除失败，失败提示: {1}".format(rule_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def redo(self, rule_name, start_time=None, end_time=None):
         """
-        :param rule_name: 规则名称
+        :param rule_name: 告警规则名称
         :param start_time: 开始时间
         :param end_time: 结束时间
         """
-        self.choose(rule_name)
-        self.browser.find_element(By.XPATH, "//*[text()='重调']").click()
-        log.info("开始重调告警规则: {0}".format(rule_name))
+        self.search(query={"告警规则名称": rule_name}, need_choose=True)
+        self.browser.find_element(By.XPATH, "//*[@id='redoBtn']").click()
+        log.info("重调告警规则: {0}".format(rule_name))
         self.browser.switch_to.parent_frame()
         wait = WebDriverWait(self.browser, 10)
         wait.until(ec.frame_to_be_available_and_switch_to_it((
@@ -1099,66 +1096,80 @@ class AlarmRule:
             log.info("{0} 重调成功".format(rule_name))
         else:
             log.warning("{0} 重调失败，失败提示: {1}".format(rule_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def data_clear(self, rule_name, fuzzy_match=False):
         """
-        :param rule_name: 规则名称
+        :param rule_name: 告警规则名称
         :param fuzzy_match: 模糊匹配
         """
         # 用于清除数据，在测试之前执行, 使用关键字开头模糊查询
-        self.browser.find_element(By.XPATH, "//*[@name='alarmRuleName']/preceding-sibling::input[1]").clear()
-        self.browser.find_element(By.XPATH, "//*[@name='alarmRuleName']/preceding-sibling::input[1]").send_keys(rule_name)
-        self.browser.find_element(By.XPATH, "//*[text()='查询']").click()
-        page_wait()
+        self.search(query={"告警规则名称": rule_name}, need_choose=False)
         fuzzy_match = True if fuzzy_match == "是" else False
         if fuzzy_match:
             record_element = self.browser.find_elements(
-                By.XPATH, "//*[@field='alarmRuleName']/div/span[@class='tree-title']/a[starts-with(text(),'{0}')]".format(
-                    rule_name))
+                By.XPATH, "//*[@field='alarmRuleName']//*[starts-with(text(),'{0}')]".format(rule_name))
         else:
             record_element = self.browser.find_elements(
-                By.XPATH, "//*[@field='alarmRuleName']/div/span[@class='tree-title']/a[text()='{0}']".format(rule_name))
-        if len(record_element) > 0:
-            exist_data = True
-
-            while exist_data:
-                pe = record_element[0]
-                search_result = pe.text
-                pe.click()
-                # 将规则禁用
-                self.update_status(rule_name=search_result, set_status="禁用", research=False)
-                log.info("选择: {0}".format(search_result))
-                # 删除
-                self.browser.find_element(By.XPATH, "//*[text()='删除']").click()
-                alert = BeAlertBox(back_iframe=False)
-                msg = alert.get_msg()
-                if alert.title_contains("您确定需要删除", auto_click_ok=False):
-                    alert.click_ok()
-                    alert = BeAlertBox(back_iframe=False)
-                    msg = alert.get_msg()
-                    if alert.title_contains("成功"):
-                        log.info("{0} 删除成功".format(search_result))
-                        page_wait()
-                        if fuzzy_match:
-                            # 重新获取页面查询结果
-                            record_element = self.browser.find_elements(
-                                By.XPATH, "//*[@field='alarmRuleName']/div/span[@class='tree-title']/a[starts-with(text(),'{0}')]".format(
-                                    rule_name))
-                            if len(record_element) > 0:
-                                exist_data = True
-                            else:
-                                # 查询结果为空,修改exist_data为False，退出循环
-                                log.info("数据清理完成")
-                                exist_data = False
-                        else:
-                            break
-                    else:
-                        raise Exception("删除数据时出现未知异常: {0}".format(msg))
-                else:
-                    log.warning("{0} 清理失败，失败提示: {1}".format(rule_name, msg))
-                    set_global_var("ResultMsg", msg, False)
-                    break
-        else:
+                By.XPATH, "//*[@field='alarmRuleName']//*[text()='{0}']".format(rule_name))
+        if len(record_element) == 0:
             # 查询结果为空,结束处理
             log.info("查询不到满足条件的数据，无需清理")
+            return
+
+        exist_data = True
+        while exist_data:
+            pe = record_element[0]
+            search_result = pe.text
+            pe.click()
+            log.info("选择: {0}".format(search_result))
+            if self._get_current_status():
+                # 将规则禁用
+                self.browser.find_element(
+                    By.XPATH, "//*[text()='{0}']/../../../following-sibling::td[2]/div/span".format(search_result)).click()
+                log.info("禁用告警规则: {}".format(search_result))
+                alert = BeAlertBox(back_iframe=False)
+                msg = alert.get_msg()
+                if alert.title_contains("确认禁用{0}吗".format(search_result), auto_click_ok=False):
+                    alert.click_ok()
+                    sleep(1)
+                    alert = BeAlertBox(back_iframe=False)
+                    msg = alert.get_msg()
+                    if alert.title_contains("操作成功"):
+                        log.info("{0} 禁用成功".format(search_result))
+                    else:
+                        log.warning("{0} 禁用失败，失败提示: {1}".format(search_result, msg))
+                        return
+                else:
+                    log.warning("{0} 禁用失败，失败提示: {1}".format(search_result, msg))
+                    return
+                # 重新点击该行记录
+                self.browser.find_element(
+                    By.XPATH, "//*[@field='alarmRuleName']//*[text()='{0}']".format(search_result)).click()
+            # 删除
+            self.browser.find_element(By.XPATH, "//*[@id='deleteBtn']").click()
+            alert = BeAlertBox(back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("您确定需要删除", auto_click_ok=False):
+                alert.click_ok()
+                alert = BeAlertBox(back_iframe=False)
+                msg = alert.get_msg()
+                if alert.title_contains("成功"):
+                    log.info("{0} 删除成功".format(search_result))
+                    page_wait()
+                    if fuzzy_match:
+                        # 重新获取页面查询结果
+                        record_element = self.browser.find_elements(
+                            By.XPATH, "//*[@field='alarmRuleName']//*[starts-with(text(),'{0}')]".format(rule_name))
+                        if len(record_element) == 0:
+                            # 查询结果为空,修改exist_data为False，退出循环
+                            log.info("数据清理完成")
+                            exist_data = False
+                    else:
+                        break
+                else:
+                    raise Exception("删除数据时出现未知异常: {0}".format(msg))
+            else:
+                log.warning("{0} 清理失败，失败提示: {1}".format(rule_name, msg))
+                gbl.temp.set("ResultMsg", msg)
+                break

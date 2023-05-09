@@ -7,13 +7,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class WaitElement:
 
     def __init__(self, timeout=30):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.timeout = timeout
 
     def visible(self, xpath):

@@ -2,6 +2,7 @@
 # @Author: peng wei
 # @Time: 2021/8/17 下午4:09
 
+import json
 from time import sleep
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -12,14 +13,16 @@ from src.main.python.lib.input import set_textarea
 from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.core.app.VisualModeler.doctorWho import DoctorWho
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.dateCalculation import calculation
+from src.main.python.lib.dateUtil import set_calendar
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
 class CmdTemplate:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         DoctorWho().choose_menu("指令配置-指令模版")
         page_wait()
         wait = WebDriverWait(self.browser, 30)
@@ -30,23 +33,108 @@ class CmdTemplate:
         page_wait()
         sleep(1)
 
-    def choose(self, template_name):
+    def search(self, query, need_choose=False):
         """
-        :param template_name: 模版名称
+        :param query: 查询条件，字典
+        :param need_choose: True/False
         """
-        try:
-            self.browser.find_element(By.XPATH, "//*[@id='templName']/following-sibling::span/input").clear()
+        if not isinstance(query, dict):
+            raise TypeError("查询条件需要是字典格式")
+        log.info("查询条件: {0}".format(json.dumps(query, ensure_ascii=False)))
+        select_item = None
+
+        # 模版名称
+        if query.__contains__("模版名称"):
+            temp_name = query.get("模版名称")
+            self.browser.find_element(By.XPATH, "//*[@id='templName']/following-sibling::span/input[1]").clear()
             self.browser.find_element(
-                By.XPATH, "//*[@id='templName']/following-sibling::span/input").send_keys(template_name)
-            page_wait()
-            self.browser.find_element(By.XPATH, "//*[@id='cmdTmpl-query']").click()
-            page_wait()
-            self.browser.find_element(
-                By.XPATH, "//*[@field='templName']/*[contains(@class,'templName') and text()='{0}']".format(
-                    template_name)).click()
-            log.info("选择模版：{0}".format(template_name))
-        except NoSuchElementException:
-            raise ("所选指令模版不存在, 模版名称: {0}".format(template_name))
+                By.XPATH, "//*[@id='templName']/following-sibling::span/input[1]").send_keys(temp_name)
+            select_item = temp_name
+
+        # 创建人
+        if query.__contains__("创建人"):
+            creator = query.get("创建人")
+            self.browser.find_element(By.XPATH, "//*[@id='userName']/following-sibling::span/input[1]").clear()
+            self.browser.find_element(By.XPATH, "//*[@id='userName']/following-sibling::span/input[1]").send_keys(creator)
+
+        # 模版启用
+        if query.__contains__("模版启用"):
+            temp_status = query.get("模版启用")
+            self.browser.find_element(By.XPATH, "//*[@id='templStatus']/following-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(temp_status)).click()
+
+        # 开始时间
+        if query.__contains__("开始时间"):
+            begin_time = query.get("开始时间")
+            self.browser.find_element(By.XPATH, "//*[@id='startTime']/following-sibling::span//a").click()
+            if isinstance(begin_time, dict):
+                # 间隔，0表示当前，正数表示未来，负数表示过去
+                time_interval = begin_time.get("间隔")
+                # 单位，年、月、天、时、分、秒
+                time_unit = begin_time.get("单位")
+                begin_time = calculation(interval=time_interval, unit=time_unit)
+            else:
+                raise AttributeError("开始时间必须是字典")
+            set_calendar(date_s=begin_time, date_format='%Y-%m-%d %H:%M:%S')
+            log.info("设置开始时间: {0}".format(begin_time))
+
+        # 结束时间
+        if query.__contains__("结束时间"):
+            end_time = query.get("结束时间")
+            self.browser.find_element(By.XPATH, "//*[@name='endDate']/preceding-sibling::span//a").click()
+            if isinstance(end_time, dict):
+                # 间隔，0表示当前，正数表示未来，负数表示过去
+                time_interval = end_time.get("间隔")
+                # 单位，年、月、天、时、分、秒
+                time_unit = end_time.get("单位")
+                end_time = calculation(interval=time_interval, unit=time_unit)
+            else:
+                raise AttributeError("结束时间必须是字典")
+            set_calendar(date_s=end_time, date_format='%Y-%m-%d %H:%M:%S')
+            log.info("设置结束时间: {0}".format(end_time))
+
+        # 网络层级
+        if query.__contains__("网络层级"):
+            level = query.get("网络层级")
+            self.browser.find_element(By.XPATH, "//*[@id='level']/following-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(level)).click()
+
+        # 选择方式
+        if query.__contains__("选择方式"):
+            sel_mode = query.get("选择方式")
+            self.browser.find_element(By.XPATH, "//*[@id='selMode']/following-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(sel_mode)).click()
+
+        # 专业领域
+        if query.__contains__("专业领域"):
+            field = query.get("专业领域")
+            self.browser.find_element(By.XPATH, "//*[@id='templTypeId']/following-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            for f in field:
+                self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(f)).click()
+
+        # 查询
+        self.browser.find_element(By.XPATH, "//*[@id='cmdTmpl-query']").click()
+        page_wait()
+        alert = BeAlertBox(timeout=1, back_iframe=False)
+        if alert.exist_alert:
+            msg = alert.get_msg()
+            log.info("弹出框返回: {0}".format(msg))
+            gbl.temp.set("ResultMsg", msg)
+            return
+        if need_choose:
+            if select_item:
+                try:
+                    self.browser.find_element(
+                        By.XPATH, "//*[@field='templName']/*[text()='{0}']".format(select_item)).click()
+                except NoSuchElementException:
+                    raise KeyError("未找到匹配数据")
+                log.info("选择: {0}".format(select_item))
+            else:
+                raise KeyError("条件不足，无法选择数据")
 
     def add(self, template_name, field, levels, mode, remark):
         """
@@ -73,13 +161,13 @@ class CmdTemplate:
         :param bind_ne_level: 模版网元类型绑定
         :param bind_cmd: 模版指令绑定
         """
-        self.choose(template_name)
+        self.search(query={"模版名称": template_name}, need_choose=True)
         self.browser.find_element(By.XPATH, "//*[@id='cmdTmpl-update']").click()
         alert = BeAlertBox(timeout=2, back_iframe=False)
         if alert.exist_alert:
             msg = alert.get_msg()
             log.warning("修改指令模版失败，失败原因: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
         else:
             wait = WebDriverWait(self.browser, 10)
             wait.until(ec.frame_to_be_available_and_switch_to_it((
@@ -203,7 +291,7 @@ class CmdTemplate:
             log.info("保存指令模版成功")
         else:
             log.warning("保存指令模版失败，失败原因: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def autoFollowUpStrategy(self, enable, follow_scope, follow_period, follow_time):
         """
@@ -261,7 +349,7 @@ class CmdTemplate:
             log.info("保存自动跟进策略成功")
         else:
             log.warning("保存自动跟进策略失败，失败原因: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def templateBindNE(self, netunit_name, levels, vendor, model, level_type, unassigned_list):
         """
@@ -297,16 +385,18 @@ class CmdTemplate:
         # 厂家
         if vendor:
             self.browser.find_element(By.XPATH, "//*[@id='bindingVendorNE']/following-sibling::span//a").click()
-            self.browser.find_element(
-                By.XPATH, "//*[contains(@id,'bindingVendorNE') and text()='{0}']".format(vendor)).click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(vendor)).click()
             log.info("选择厂家: {0}".format(vendor))
             sleep(1)
 
         # 设备型号
         if model:
             self.browser.find_element(By.XPATH, "//*[@id='bindingNetunitModelNE']/following-sibling::span//a").click()
-            self.browser.find_element(
-                By.XPATH, "//*[contains(@id,'bindingNetunitModelNE') and text()='{0}']".format(model)).click()
+            panel_xpath = getPanelXpath()
+            wait = WebDriverWait(self.browser, 30)
+            wait.until(ec.element_to_be_clickable((By.XPATH, panel_xpath + "//*[text()='{0}']".format(model))))
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(model)).click()
             log.info("选择设备型号: {0}".format(model))
             sleep(1)
 
@@ -318,7 +408,7 @@ class CmdTemplate:
             log.info("设置网元类型: {0}".format(level_type))
 
         # 查询待分配
-        self.browser.find_element(By.XPATH, "//*[@id='bindingNetunit']//*[text()='查询待分配']").click()
+        self.browser.find_element(By.XPATH, "//*[@id='bindingNetunit']//*[contains(@class,'queryUnassigned')]").click()
         page_wait()
 
         # 待分配网元
@@ -333,9 +423,7 @@ class CmdTemplate:
         if alert.title_contains("您确定分配已选网元吗", auto_click_ok=False):
             alert.click_ok()
             msg = "保存成功"
-            set_global_var("ResultMsg", msg, False)
-        else:
-            set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def templateBindNELevel(self, unassigned_list):
         """
@@ -352,13 +440,13 @@ class CmdTemplate:
             self.browser.find_element(
                 By.XPATH, "//*[@id='bindingLevelName']/following-sibling::span/input[1]").send_keys(ne_level)
             # 查询待分配
-            self.browser.find_element(By.XPATH, "//*[@id='bindingLevel']//*[text()='查询待分配']").click()
+            self.browser.find_element(By.XPATH, "//*[@id='bindingLevel']//*[contains(@class,'queryUnassigned')]").click()
             page_wait()
 
             self.browser.find_element(
                 By.XPATH, "//*[@field='levelName']/*[contains(@class,'unassignedLevelTab') and text()='{0}']".format(
                     ne_level)).click()
-            self.browser.find_element(By.XPATH, "//*[@class='operatorBtn']/button[@title='分配已选网元类型']").click()
+            self.browser.find_element(By.XPATH, "//*[@id='bindingLevel']//*[@class='operatorBtn']/button[2]").click()
             alert = BeAlertBox(timeout=1)
             msg = alert.get_msg()
             if alert.title_contains("您确定分配已选网元类型吗", auto_click_ok=False):
@@ -368,9 +456,9 @@ class CmdTemplate:
                     By.XPATH, "//iframe[contains(@src, '/VisualModeler/html/cmd/cmdTmplEditWin.html')]")))
                 page_wait(1)
                 msg = "保存成功"
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
             else:
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
                 return
             log.info("分配网元类型: {0}".format(ne_level))
 
@@ -420,7 +508,7 @@ class CmdTemplate:
             log.info("选择设备型号: {0}".format(model))
 
         # 查询待选择
-        self.browser.find_element(By.XPATH, "//*[@id='bindingCmdInfo']//*[text()='查询待分配']").click()
+        self.browser.find_element(By.XPATH, "//*[@id='bindingCmdInfo']//*[contains(@class,'queryUnassigned')]").click()
         page_wait()
         sleep(1)
 
@@ -446,9 +534,7 @@ class CmdTemplate:
         if alert.title_contains("您确定分配已选指令吗", auto_click_ok=False):
             alert.click_ok()
             msg = "保存成功"
-            set_global_var("ResultMsg", msg, False)
-        else:
-            set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def _get_status(self, template_name):
         """
@@ -474,7 +560,7 @@ class CmdTemplate:
         # 启用指令模版时，若未创建任务则提示是否创建任务；若已创建任务，则提示是否同步启用任务
         # 禁用指令模版时，先弹出二次确认，确认后先禁用模版，若已创建任务且任务已启用，则将任务禁用
         """
-        self.choose(template_name)
+        self.search(query={"模版名称": template_name}, need_choose=True)
         page_wait(2)
         template = self.browser.find_element(
             By.XPATH, "//*[contains(@id,'cmdTmplTab')]//*[text()='{0}']/../..".format(template_name))
@@ -505,11 +591,10 @@ class CmdTemplate:
                     log.info("禁用指令模版成功")
                 else:
                     log.info("禁用指令模版失败，失败原因: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
         else:
             log.info("指令模版【{0}】状态已经是{1}".format(template_name, status))
             msg = "{0}指令模版成功".format(status)
-            set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def data_clear(self, template_name, fuzzy_match=False):
         """
@@ -517,79 +602,69 @@ class CmdTemplate:
         :param fuzzy_match: 模糊匹配
         """
         # 用于清除数据，在测试之前执行, 使用关键字开头模糊查询
-        wait = WebDriverWait(self.browser, 30)
-        wait.until(ec.element_to_be_clickable((By.XPATH, "//*[@id='templName']/following-sibling::span/input[1]")))
-        self.browser.find_element(By.XPATH, "//*[@id='templName']/following-sibling::span/input[1]").clear()
-        self.browser.find_element(By.XPATH, "//*[@id='templName']/following-sibling::span/input[1]").send_keys(
-            template_name)
-        self.browser.find_element(By.XPATH, "//*[@id='cmdTmpl-query']").click()
-        page_wait()
+        self.search(query={"模版名称": template_name}, need_choose=False)
         fuzzy_match = True if fuzzy_match == "是" else False
-        sleep(1)
         if fuzzy_match:
             record_element = self.browser.find_elements(
                 By.XPATH, "//*[@field='templName']//*[starts-with(text(),'{0}')]".format(template_name))
         else:
             record_element = self.browser.find_elements(
                 By.XPATH, "//*[@field='templName']//*[text()='{0}']".format(template_name))
-        if len(record_element) > 0:
-            exist_data = True
+        if len(record_element) == 0:
+            # 查询结果为空,结束处理
+            log.info("查询不到满足条件的数据，无需清理")
+            return
 
-            while exist_data:
-                pe = record_element[0]
-                js = 'return $(".cmdTmplTab_datagrid-cell-c1-templName")[1].innerText;'
-                search_result = self.browser.execute_script(js)
-                pe.click()
-                log.info("选择: {0}".format(search_result))
-                if self._get_status(search_result):
-                    log.info("禁用指令模版: {0}".format(search_result))
-                    self.browser.find_element(
-                        By.XPATH, "//*[contains(@id,'cmdTmplTab')]//*[text()='{0}']/../following-sibling::td[1]//*[@class='switchbutton']".format(
-                            search_result)).click()
-                    alert = BeAlertBox(back_iframe=False)
-                    if alert.title_contains("您确定禁用所选指令模版吗", auto_click_ok=False):
-                        alert.click_ok()
-                        alert = BeAlertBox(back_iframe=False)
-                        msg = alert.get_msg()
-                        if alert.title_contains("禁用指令模版成功", auto_click_ok=False):
-                            # 禁用指令模版成功
-                            alert.click_ok()
-                            log.info("禁用指令模版成功")
-                            sleep(1)
-                        else:
-                            log.info("禁用指令模版失败，失败原因: {0}".format(msg))
-                            set_global_var("ResultMsg", msg, False)
-                            return
-                # 删除
-                self.browser.find_element(By.XPATH, "//*[@id='cmdTmpl-del']").click()
+        exist_data = True
+        while exist_data:
+            pe = record_element[0]
+            js = 'return $(".cmdTmplTab_datagrid-cell-c1-templName")[1].innerText;'
+            search_result = self.browser.execute_script(js)
+            pe.click()
+            log.info("选择: {0}".format(search_result))
+            if self._get_status(search_result):
+                log.info("禁用指令模版: {0}".format(search_result))
+                self.browser.find_element(
+                    By.XPATH, "//*[contains(@id,'cmdTmplTab')]//*[text()='{0}']/../following-sibling::td[1]//*[@class='switchbutton']".format(
+                        search_result)).click()
                 alert = BeAlertBox(back_iframe=False)
-                msg = alert.get_msg()
-                if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
+                if alert.title_contains("您确定禁用所选指令模版吗", auto_click_ok=False):
                     alert.click_ok()
                     alert = BeAlertBox(back_iframe=False)
                     msg = alert.get_msg()
-                    if alert.title_contains("成功"):
-                        log.info("{0} 删除成功".format(search_result))
-                        page_wait()
-                        if fuzzy_match:
-                            # 重新获取页面查询结果
-                            record_element = self.browser.find_elements(
-                                By.XPATH, "//*[@field='templName']//*[starts-with(text(),'{}')]".format(template_name))
-                            if len(record_element) > 0:
-                                exist_data = True
-                            else:
-                                # 查询结果为空,修改exist_data为False，退出循环
-                                log.info("数据清理完成")
-                                exist_data = False
-                        else:
-                            break
+                    if alert.title_contains("禁用指令模版成功", auto_click_ok=False):
+                        # 禁用指令模版成功
+                        alert.click_ok()
+                        log.info("禁用指令模版成功")
+                        sleep(1)
                     else:
-                        raise Exception("删除数据时出现未知异常: {0}".format(msg))
+                        log.info("禁用指令模版失败，失败原因: {0}".format(msg))
+                        return
+            # 删除
+            self.browser.find_element(By.XPATH, "//*[@id='cmdTmpl-del']").click()
+            alert = BeAlertBox(back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
+                alert.click_ok()
+                alert = BeAlertBox(back_iframe=False)
+                msg = alert.get_msg()
+                if alert.title_contains("成功"):
+                    log.info("{0} 删除成功".format(search_result))
+                    page_wait()
+                    if fuzzy_match:
+                        # 重新获取页面查询结果
+                        record_element = self.browser.find_elements(
+                            By.XPATH, "//*[@field='templName']//*[starts-with(text(),'{}')]".format(template_name))
+                        if len(record_element) == 0:
+                            # 查询结果为空,修改exist_data为False，退出循环
+                            log.info("数据清理完成")
+                            exist_data = False
+                    else:
+                        break
                 else:
-                    # 无权操作
-                    log.warning("{0} 删除失败，失败提示: {1}".format(template_name, msg))
-                    set_global_var("ResultMsg", msg, False)
-                    break
-        else:
-            # 查询结果为空,结束处理
-            log.info("查询不到满足条件的数据，无需清理")
+                    raise Exception("删除数据时出现未知异常: {0}".format(msg))
+            else:
+                # 无权操作
+                log.warning("{0} 删除失败，失败提示: {1}".format(template_name, msg))
+                gbl.temp.set("ResultMsg", msg)
+                break

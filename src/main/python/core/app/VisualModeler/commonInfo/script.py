@@ -15,13 +15,13 @@ from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.core.app.VisualModeler.doctorWho import DoctorWho
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class Script:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         DoctorWho().choose_menu("常用信息管理-脚本管理")
         self.browser.switch_to.frame(
             self.browser.find_element(By.XPATH, "//iframe[contains(@src, '/VisualModeler/html/commonInfo/scriptCfg.html')]"))
@@ -68,7 +68,7 @@ class Script:
         if alert.exist_alert:
             msg = alert.get_msg()
             log.info("弹出框返回: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
             return
         if need_choose:
             if select_item:
@@ -106,7 +106,7 @@ class Script:
             log.info("数据 {0} 添加成功".format(script_name))
         else:
             log.warning("数据 {0} 添加失败，失败提示: {1}".format(script_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def update(self, script, script_name, data_type):
         """
@@ -123,7 +123,7 @@ class Script:
         exist = alert.exist_alert
         if exist:
             msg = alert.get_msg()
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
         else:
             wait = WebDriverWait(self.browser, 30)
             wait.until(ec.frame_to_be_available_and_switch_to_it((
@@ -142,7 +142,7 @@ class Script:
                 log.info("{0} 修改成功".format(script))
             else:
                 log.warning("{0} 修改失败，失败提示: {1}".format(script, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def script_page(self, script_name, data_type, script_type=None):
         """
@@ -180,13 +180,14 @@ class Script:
         :param ver_no: 版本号
         """
         self.search(query={"脚本名称": script_name}, need_choose=True)
-        self.browser.find_element(By.XPATH, "//*[@id='addBtn']").click()
+        self.browser.find_element(By.XPATH, "//*[@id='editBtn']").click()
 
         # 鉴于数据权限问题，在修改/删除数据时，需要判断是否有弹出框提示无权操作
         alert = BeAlertBox(back_iframe=False, timeout=2)
         exist = alert.exist_alert
         if exist:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             wait = WebDriverWait(self.browser, 30)
             wait.until(ec.frame_to_be_available_and_switch_to_it((
@@ -257,7 +258,7 @@ class Script:
         # 调用上传文件操作
         log.info("执行上传脚本文件操作")
         upload(file_name=file_name, catalog="script")
-        self.browser.find_element(By.XPATH, "//*[@id='importScriptFile']//*[text()='上传文件']").click()
+        self.browser.find_element(By.XPATH, "//*[@id='importScriptFile']").click()
 
         alert = BeAlertBox()
         msg = alert.get_msg()
@@ -269,7 +270,7 @@ class Script:
             self.save_current_version()
         else:
             log.warning("脚本 {0}, 版本【{1}】上传文件失败，返回结果: {2}".format(script_name, ver_no, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def script_file_r_click(self, script_name, ver_no, file_name, operate):
         """
@@ -295,7 +296,7 @@ class Script:
         sleep(1)
 
         if operate == "设置为主脚本":
-            self.browser.find_element(By.XPATH, "//*[@id='setMainScriptBtn']//*[text()='设置为主脚本']").click()
+            self.browser.find_element(By.XPATH, "//*[@id='setMainScriptBtn']").click()
             log.info("执行设置主脚本操作")
 
             alert = BeAlertBox()
@@ -314,12 +315,12 @@ class Script:
                 else:
                     log.warning("脚本 {0}, 版本【{1}】右键文件 {2} 操作失败，返回结果: {3}".format(
                         script_name, ver_no, file_name, msg))
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
             else:
                 raise "脚本文件名右键设置主脚本失败，弹出框返回: {0}".format(msg)
 
         elif operate == "删除脚本":
-            self.browser.find_element(By.XPATH, "//*[@id='delScriptBtn']//*[text()='删除脚本']").click()
+            self.browser.find_element(By.XPATH, "//*[@id='delScriptBtn']").click()
             log.info("执行删除脚本文件操作")
 
             alert = BeAlertBox()
@@ -338,13 +339,13 @@ class Script:
                 else:
                     log.warning(
                         "脚本 {0}, 版本【{1}】右键文件 {2} 操作失败，返回结果: {3}".format(script_name, ver_no, file_name, msg))
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
             else:
                 raise "脚本文件名右键删除脚本失败，弹出框返回: {0}".format(msg)
 
         elif operate == "下载脚本":
             log.info("执行下载脚本文件操作")
-            self.browser.find_element(By.XPATH, "//*[@onclick='downloadFile()']//*[text()='下载脚本']").click()
+            self.browser.find_element(By.XPATH, "//*[@onclick='downloadFile()']").click()
             log.info("脚本 {0}, 版本【{1}】下载脚本文件: {2}".format(script_name, ver_no, file_name))
         else:
             raise KeyError("脚本文件名右键操作值: {0} 不支持".format(operate))
@@ -366,7 +367,7 @@ class Script:
         # 左键单击脚本文件名，展示脚本内容
         file_element.click()
         page_wait()
-        full_screen = self.browser.find_element(By.XPATH, "//*[@id='full_btn']//*[text()='全屏']")
+        full_screen = self.browser.find_element(By.XPATH, "//*[@id='full_btn']")
         self.browser.execute_script("arguments[0].scrollIntoView(true);", full_screen)
         full_screen.click()
 
@@ -381,7 +382,7 @@ class Script:
         # TODO
 
         # 保存
-        self.browser.find_element(By.XPATH, "//*[@id='saveFileContent']//*[text()='保存']").click()
+        self.browser.find_element(By.XPATH, "//*[@id='saveFileContent']").click()
         self.browser.switch_to.parent_frame()
         alert = BeAlertBox()
         msg = alert.get_msg()
@@ -389,13 +390,13 @@ class Script:
             log.info("更新脚本内容成功")
         else:
             log.warning("更新脚本内容失败，返回结果: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def save_current_version(self):
         # 需要先点击版本后开始操作
 
         # 焦点定位到文件名元素上
-        element = self.browser.find_element(By.XPATH, "//*[@onclick=\"saveVersionParamCfg('0')\"]//*[text()='保存当前版本']")
+        element = self.browser.find_element(By.XPATH, "//*[@onclick=\"saveVersionParamCfg('0')\"]")
         self.browser.execute_script("arguments[0].scrollIntoView(true);", element)
         sleep(1)
         element.click()
@@ -406,13 +407,13 @@ class Script:
             log.info("保存当前版本成功")
         else:
             log.warning("保存当前版本失败，返回结果: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def save_new_version(self):
         # 需要先点击版本后开始操作
 
         # 焦点定位到文件名元素上
-        element = self.browser.find_element(By.XPATH, "//*[@onclick=\"saveVersionParamCfg('1')\"]//*[text()='保存新版本']")
+        element = self.browser.find_element(By.XPATH, "//*[@onclick=\"saveVersionParamCfg('1')\"]")
         self.browser.execute_script("arguments[0].scrollIntoView(true);", element)
         sleep(1)
         element.click()
@@ -423,7 +424,7 @@ class Script:
             log.info("保存新版本成功")
         else:
             log.warning("保存新版本失败，返回结果: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def test(self, script_name, ver_no):
         """
@@ -435,14 +436,14 @@ class Script:
         self.choose_version(script_name, ver_no)
 
         # 点击测试按钮
-        self.browser.find_element(By.XPATH, "//*[@id='testJava()']//*[text()='测试']").click()
+        self.browser.find_element(By.XPATH, "//*[@id='testJava()']").click()
         alert = BeAlertBox(back_iframe=True, timeout=30)
         msg = alert.get_msg()
         if alert.title_contains("编译成功"):
             log.info("脚本 {0}, 版本[{1}] 测试成功".format(script_name, ver_no))
         else:
             log.warning("脚本 {0}, 版本[{1}] 测试失败，测试返回结果: {2}".format(script_name, ver_no, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def delete_version(self, script_name, ver_no=1):
         """
@@ -453,7 +454,7 @@ class Script:
         # 需要先点击版本后开始操作
         self.choose_version(script_name, ver_no)
 
-        self.browser.find_element(By.XPATH, "//*[@onclick='deleteVersion()']//*[text()='删除']").click()
+        self.browser.find_element(By.XPATH, "//*[@onclick='deleteVersion()']").click()
         log.info("执行删除版本操作")
 
         alert = BeAlertBox()
@@ -468,7 +469,7 @@ class Script:
                 log.warning("脚本 {0}, 版本【{1}】删除失败，返回结果: {2}".format(script_name, ver_no, msg))
         else:
             log.warning("脚本 {0}, 版本【{1}】删除失败，返回结果: {2}".format(script_name, ver_no, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def download_version(self, script_name, ver_no=1):
         """
@@ -478,7 +479,7 @@ class Script:
         log.info("开始下载版本")
         # 需要先点击版本后开始操作
         self.choose_version(script_name, ver_no)
-        self.browser.find_element(By.XPATH, "//*[@onclick='downloadVersion()']//*[text()='下载']").click()
+        self.browser.find_element(By.XPATH, "//*[@onclick='downloadVersion()']").click()
         sleep(3)
         log.info("已下载脚本{0}, 版本[{1}]".format(script_name, ver_no))
 
@@ -508,7 +509,7 @@ class Script:
                 log.warning("版本【{0}】提交审批失败，失败提示: {1}".format(ver_no, msg))
         else:
             log.warning("{0} 删除失败，失败提示: {1}".format(ver_no, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def delete(self, script_name):
         """
@@ -530,7 +531,7 @@ class Script:
                 log.warning("{0} 删除失败，失败提示: {1}".format(script_name, msg))
         else:
             log.warning("{0} 删除失败，失败提示: {1}".format(script_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def data_clear(self, script_name, fuzzy_match=False):
         """
@@ -538,57 +539,50 @@ class Script:
         :param fuzzy_match: 模糊匹配
         """
         # 用于清除数据，在测试之前执行, 使用关键字开头模糊查询
-        self.browser.find_element(By.XPATH, "//*[@name='scriptName']/preceding-sibling::input").clear()
-        self.browser.find_element(By.XPATH, "//*[@name='scriptName']/preceding-sibling::input").send_keys(script_name)
-        self.browser.find_element(By.XPATH, "//*[contains(@data-options,'icon-search-primary')]").click()
-        page_wait()
+        self.search(query={"脚本名称": script_name}, need_choose=False)
         fuzzy_match = True if fuzzy_match == "是" else False
         if fuzzy_match:
             record_element = self.browser.find_elements(
-                By.XPATH, "//*[@field='scriptName']/*[contains(@class,'scriptName') and starts-with(text(),'{0}')]".format(
-                    script_name))
+                By.XPATH, "//*[@field='scriptName']//*[starts-with(text(),'{0}')]".format(script_name))
         else:
             record_element = self.browser.find_elements(
-                By.XPATH, "//*[@field='scriptName']/*[contains(@class,'scriptName') and text()='{0}']".format(script_name))
-        if len(record_element) > 0:
-            exist_data = True
-
-            while exist_data:
-                pe = record_element[0]
-                search_result = pe.text
-                pe.click()
-                log.info("选择: {0}".format(search_result))
-                # 删除
-                self.browser.find_element(By.XPATH, "//*[@id='delBtn']").click()
-                alert = BeAlertBox(back_iframe=False)
-                msg = alert.get_msg()
-                if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
-                    alert.click_ok()
-                    alert = BeAlertBox(back_iframe=False)
-                    msg = alert.get_msg()
-                    if alert.title_contains("成功"):
-                        log.info("{0} 删除成功".format(search_result))
-                        page_wait()
-                        if fuzzy_match:
-                            # 重新获取页面查询结果
-                            record_element = self.browser.find_elements(
-                                By.XPATH, "//*[@field='scriptName']/*[contains(@class,'scriptName') and starts-with(text(),'{0}')]".format(
-                                    script_name))
-                            if len(record_element) > 0:
-                                exist_data = True
-                            else:
-                                # 查询结果为空,修改exist_data为False，退出循环
-                                log.info("数据清理完成")
-                                exist_data = False
-                        else:
-                            break
-                    else:
-                        raise Exception("删除数据时出现未知异常: {0}".format(msg))
-                else:
-                    # 无权操作
-                    log.warning("{0} 清理失败，失败提示: {1}".format(script_name, msg))
-                    set_global_var("ResultMsg", msg, False)
-                    break
-        else:
+                By.XPATH, "//*[@field='scriptName']//*[text()='{0}']".format(script_name))
+        if len(record_element) == 0:
             # 查询结果为空,结束处理
             log.info("查询不到满足条件的数据，无需清理")
+            return
+
+        exist_data = True
+        while exist_data:
+            pe = record_element[0]
+            search_result = pe.text
+            pe.click()
+            log.info("选择: {0}".format(search_result))
+            # 删除
+            self.browser.find_element(By.XPATH, "//*[@id='delBtn']").click()
+            alert = BeAlertBox(back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
+                alert.click_ok()
+                alert = BeAlertBox(back_iframe=False)
+                msg = alert.get_msg()
+                if alert.title_contains("成功"):
+                    log.info("{0} 删除成功".format(search_result))
+                    page_wait()
+                    if fuzzy_match:
+                        # 重新获取页面查询结果
+                        record_element = self.browser.find_elements(
+                            By.XPATH, "//*[@field='scriptName']//*[starts-with(text(),'{0}')]".format(script_name))
+                        if len(record_element) == 0:
+                            # 查询结果为空,修改exist_data为False，退出循环
+                            log.info("数据清理完成")
+                            exist_data = False
+                    else:
+                        break
+                else:
+                    raise Exception("删除数据时出现未知异常: {0}".format(msg))
+            else:
+                # 无权操作
+                log.warning("{0} 清理失败，失败提示: {1}".format(script_name, msg))
+                gbl.temp.set("ResultMsg", msg)
+                break

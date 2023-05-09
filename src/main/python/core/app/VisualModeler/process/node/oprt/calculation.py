@@ -18,14 +18,14 @@ from src.main.python.core.app.VisualModeler.process.node.oprt.cal.sort import so
 from src.main.python.core.app.VisualModeler.process.node.oprt.cal.wash import wash
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class CalculationCenter:
     # 运算
 
     def __init__(self, oprt_type):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.oprt_type = oprt_type
 
         # 切换到运算配置iframe
@@ -70,7 +70,7 @@ class CalculationCenter:
             log.info("保存运算成功")
         else:
             log.warning("保存运算失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def cal_set(self, params):
 

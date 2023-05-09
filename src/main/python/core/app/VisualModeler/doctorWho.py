@@ -11,7 +11,7 @@ from src.main.python.lib.windows import WindowHandles
 from src.main.python.lib.tab import TabHandles
 from src.main.python.static.visualmodeler_menu import *
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def get_menu_xpath(level, menu):
@@ -36,7 +36,7 @@ def get_menu_xpath(level, menu):
 class DoctorWho:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.current_win_handle = WindowHandles()
         log.info("进入领域页面")
 
@@ -45,6 +45,7 @@ class DoctorWho:
         self.current_win_handle.close(title="告警平台")
         self.current_win_handle.close(title="仪表盘主配置页")
         self.current_win_handle.close(title="数据管理")
+        self.current_win_handle.close(title="一键启动")
         sleep(1)
 
         # 切换到vm窗口
@@ -53,7 +54,7 @@ class DoctorWho:
         # log.info("tab : {}".format(get_global_var("TableHandles")))
 
         # 重置tab
-        set_global_var("TableHandles", None)
+        gbl.service.set("TableHandles", None)
         # if bool(get_global_var("TableHandles")):
         #     # 刷新页面可以关闭打开的tab，
         #     self.browser.refresh()

@@ -8,9 +8,8 @@ from src.main.python.lib.browser import initBrowser
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.windows import WindowHandles
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
-from src.main.python.conf.loads import properties
 
 
 def login_tool(system_name, username=None, password=None, encryption=None, tokenId=None, redirect_url=None, appId=None,
@@ -32,13 +31,13 @@ def login_tool(system_name, username=None, password=None, encryption=None, token
     """
 
     # 初始化浏览器
-    chrome_driver_path = properties.get("chromeDriverPath")
+    chrome_driver_path = gbl.service.get("chromeDriverPath")
     browser = initBrowser(chrome_driver_path)
-    browser.get(properties.get("systemLoginUrl"))
+    browser.get(gbl.service.get("systemLoginUrl"))
     browser.maximize_window()
     sleep(1)
     # https高级
-    if properties.get("https"):
+    if gbl.service.get("https"):
         browser.find_element(
             By.XPATH, "//*[text()='返回安全连接']/following-sibling::button[2][contains(text(),'高级')]").click()
         browser.find_element(By.XPATH, "//*[@id='proceed-link']").click()
@@ -146,7 +145,7 @@ def login_tool(system_name, username=None, password=None, encryption=None, token
         current_win_handle = WindowHandles()
         log.info("进入应用后，保存新窗口句柄")
         # 切换到应用窗口
-        app = get_global_var("Application")
+        app = gbl.service.get("application")
         current_win_handle.save(app)
         current_win_handle.switch(app)
 

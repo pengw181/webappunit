@@ -12,8 +12,9 @@ from src.main.python.core.app.VisualModeler.process.node.business.cmdParam impor
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.processVar import choose_var
 from src.main.python.lib.pageMaskWait import page_wait
+from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def cmd_business(node_name, mem_filter, ne_filter, choose_type, scene, config, advance_set):
@@ -122,7 +123,7 @@ def cmd_business(node_name, mem_filter, ne_filter, choose_type, scene, config, a
         }
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     page_wait()
     # 设置节点名称
     if node_name:
@@ -231,7 +232,7 @@ def cmd_business(node_name, mem_filter, ne_filter, choose_type, scene, config, a
         log.info("保存节点成功")
     else:
         log.warning("保存节点失败，失败提示: {0}".format(msg))
-    set_global_var("ResultMsg", msg, False)
+    gbl.temp.set("ResultMsg", msg)
 
     # 刷新页面，返回画流程图
     browser.refresh()
@@ -287,7 +288,7 @@ def add_by_ne_type(level, member_name, status, show_member, ne_type, vendor, mod
         }
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 进入网元类型配置iframe
     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[contains(@src,'./cmdNodeType.html?')]"))
     # 等待页面加载
@@ -433,12 +434,12 @@ def add_by_ne_type(level, member_name, status, show_member, ne_type, vendor, mod
 
         # 重新进入iframe
         browser.switch_to.frame(
-            browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+            browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
         browser.switch_to.frame(
             browser.find_element(By.XPATH, "//iframe[@id='busi_cmd_node']"))
     else:
         log.warning("保存配置失败，失败提示: {0}".format(msg))
-    set_global_var("ResultMsg", msg, False)
+    gbl.temp.set("ResultMsg", msg)
 
 
 def add_by_ne(level, level_member, ne_type, vendor, model, ne_list, cmd_set):
@@ -486,7 +487,7 @@ def add_by_ne(level, level_member, ne_type, vendor, model, ne_list, cmd_set):
         }
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     page_wait()
     # 进入网元配置iframe
     wait = WebDriverWait(browser, 30)
@@ -577,23 +578,16 @@ def add_by_ne(level, level_member, ne_type, vendor, model, ne_list, cmd_set):
             if cmd_info.__contains__("解析模版"):
                 analyzer = cmd_info.get("解析模版")
                 if analyzer:
-                    log.info("开始选择解析模版")
-                    sleep(1)
                     # 点开下拉框
                     browser.find_element(
                         By.XPATH, "//*[@field='cmdName']//*[text()='{0}']/../following-sibling::td[1]//span/a".format(
                             cmd_name)).click()
                     sleep(1)
-                    ana_element = browser.find_elements_by_xpath(
-                        "//*[contains(@id,'analyzerID_') and text()='{0}']".format(analyzer))
-                    if len(ana_element) > 0:
-                        for element in ana_element:
-                            if element.is_displayed():
-                                element.click()
-                                log.info("选择解析模版: {0}".format(cmd_name))
-                                break
-                    else:
-                        raise KeyError("解析模版不存在")
+                    panel_xpath = getPanelXpath()
+                    browser.find_element(
+                        By.XPATH, panel_xpath + "//*[contains(@id,'analyzerID_') and text()='{0}']".format(
+                            analyzer)).click()
+                    log.info("选择解析模版: {}".format(analyzer))
 
             # 指令参数设置
             if cmd_info.__contains__("参数设置"):
@@ -621,9 +615,9 @@ def add_by_ne(level, level_member, ne_type, vendor, model, ne_list, cmd_set):
 
         # 重新进入iframe
         browser.switch_to.frame(
-            browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+            browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
         browser.switch_to.frame(
             browser.find_element(By.XPATH, "//iframe[@id='busi_cmd_node']"))
     else:
         log.warning("保存配置失败，失败提示: {0}".format(msg))
-    set_global_var("ResultMsg", msg, False)
+    gbl.temp.set("ResultMsg", msg)

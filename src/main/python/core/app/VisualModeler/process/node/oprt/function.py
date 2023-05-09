@@ -11,13 +11,13 @@ from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.regular import RegularCube
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class FunctionWorker:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         page_wait()
         # 切换到函数配置iframe
         wait = WebDriverWait(self.browser, 30)
@@ -129,12 +129,12 @@ class FunctionWorker:
                             log.warning("删除函数失败，失败提示: {0}".format(msg))
                     else:
                         log.warning("删除函数失败，失败提示: {0}".format(msg))
-                    set_global_var("ResultMsg", msg, False)
+                    gbl.temp.set("ResultMsg", msg)
 
                     # 切到节点iframe
-                    self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                    self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                     # 切到操作配置iframe
-                    self.browser.switch_to.frame(self.browser.find_element(By.XPATH, get_global_var("OptIframe")))
+                    self.browser.switch_to.frame(self.browser.find_element(By.XPATH, gbl.service.get("OptIframe")))
                     # 切换到运算配置iframe
                     self.browser.switch_to.frame(
                         self.browser.find_element(By.XPATH, "//iframe[contains(@src,'operateVar.html')]"))
@@ -354,10 +354,10 @@ class FunctionWorker:
                                 log.info("保存正则模版成功")
                                 # 切换到节点iframe
                                 self.browser.switch_to.frame(
-                                    self.browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                                    self.browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                                 # 切换到操作配置iframe
                                 self.browser.switch_to.frame(
-                                    self.browser.find_element(By.XPATH, get_global_var("OptIframe")))
+                                    self.browser.find_element(By.XPATH, gbl.service.get("OptIframe")))
                                 # 切换到运算配置iframe
                                 self.browser.switch_to.frame(
                                     self.browser.find_element(By.XPATH, "//iframe[contains(@src,'operateVar.html')]"))
@@ -369,7 +369,7 @@ class FunctionWorker:
                                     self.browser.find_element(By.XPATH, "//iframe[contains(@src,'funcList.html')]"))
                             else:
                                 log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-                            set_global_var("resultMsg", msg, False)
+                            gbl.temp.set("ResultMsg", msg)
 
                         # 关闭正则魔方配置
                         self.browser.find_element(
@@ -472,10 +472,10 @@ class FunctionWorker:
                                 log.info("保存正则模版成功")
                                 # 切换到节点iframe
                                 self.browser.switch_to.frame(
-                                    self.browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                                    self.browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                                 # 切换到操作配置iframe
                                 self.browser.switch_to.frame(
-                                    self.browser.find_element(By.XPATH, get_global_var("OptIframe")))
+                                    self.browser.find_element(By.XPATH, gbl.service.get("OptIframe")))
                                 # 切换到运算配置iframe
                                 self.browser.switch_to.frame(
                                     self.browser.find_element(By.XPATH, "//iframe[contains(@src,'operateVar.html')]"))
@@ -487,7 +487,7 @@ class FunctionWorker:
                                     self.browser.find_element(By.XPATH, "//iframe[contains(@src,'funcList.html')]"))
                             else:
                                 log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-                            set_global_var("resultMsg", msg, False)
+                            gbl.temp.set("ResultMsg", msg)
 
                         # 关闭正则魔方配置
                         self.browser.find_element(

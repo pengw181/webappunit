@@ -17,7 +17,7 @@ from src.main.python.lib.upload import upload
 from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.core.app.VisualModeler.doctorWho import DoctorWho
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class Template:
@@ -26,7 +26,7 @@ class Template:
         """
         :param temp_type: 模版类型
         """
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.temp_type = temp_type
         DoctorWho().choose_menu("常用信息管理-网元模版配置")
         # 进入模版配置列表页面
@@ -80,7 +80,7 @@ class Template:
         if alert.exist_alert:
             msg = alert.get_msg()
             log.info("弹出框返回: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
             return
         if need_choose:
             if select_item:
@@ -117,7 +117,7 @@ class Template:
             log.info("设置模版名称: {0}".format(zg_temp_name))
 
         # 保存
-        self.browser.find_element(By.XPATH, "//*[@onclick='saveTable()']//*[text()='保存']").click()
+        self.browser.find_element(By.XPATH, "//*[@onclick='saveTable()']").click()
         self.browser.switch_to.parent_frame()
         alert = BeAlertBox(timeout=30)
         msg = alert.get_msg()
@@ -125,7 +125,7 @@ class Template:
             log.info("{0} 添加成功".format(zg_temp_name))
         else:
             log.warning("{0} 添加失败，失败提示: {1}".format(zg_temp_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def update_zg_temp(self, zg_temp, zg_temp_name):
         """
@@ -140,7 +140,7 @@ class Template:
         alert = BeAlertBox(back_iframe=False, timeout=2)
         if alert.exist_alert:
             msg = alert.get_msg()
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
         else:
             # 进入表配置页面iframe
             wait = WebDriverWait(self.browser, 30)
@@ -162,14 +162,14 @@ class Template:
                 log.info("设置新模版名称: {0}".format(zg_temp_name))
 
             # 保存
-            self.browser.find_element(By.XPATH, "//*[@onclick='saveTable()']//*[text()='保存']").click()
+            self.browser.find_element(By.XPATH, "//*[@onclick='saveTable()']").click()
             alert = BeAlertBox()
             msg = alert.get_msg()
             if alert.title_contains("保存成功"):
                 log.info("{0} 修改成功".format(zg_temp))
             else:
                 log.warning("{0} 修改失败，失败提示: {1}".format(zg_temp, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def col_sets(self, zg_temp_name, col_set):
         """
@@ -182,7 +182,8 @@ class Template:
         # 鉴于数据权限问题，在修改/删除数据时，需要判断是否有弹出框提示无权操作
         alert = BeAlertBox(back_iframe=False, timeout=2)
         if alert.exist_alert:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
             return
 
         # 进入表配置页面iframe
@@ -246,10 +247,10 @@ class Template:
                                 By.XPATH, "//iframe[contains(@src,'zgTempCfgEdit.html')]")))
                         else:
                             log.warning("{0} 删除失败，失败提示: {0}".format(col_obj, msg))
-                        set_global_var("ResultMsg", msg, False)
+                        gbl.temp.set("ResultMsg", msg)
                     else:
                         log.warning("{0} 删除失败，失败提示: {0}".format(col_obj, msg))
-                    set_global_var("ResultMsg", msg, False)
+                    gbl.temp.set("ResultMsg", msg)
                     return
                 else:
                     raise KeyError("操作类型 仅支持添加/修改/删除，当前值: {0}".format(opt_type))
@@ -350,13 +351,13 @@ class Template:
                             By.XPATH, "//iframe[contains(@src,'zgTempCfgEdit.html')]")))
                     else:
                         log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-                    set_global_var("ResultMsg", msg, False)
+                    gbl.temp.set("ResultMsg", msg)
                 else:
                     # 返回上层iframe
                     self.browser.switch_to.parent_frame()
 
             # 保存
-            self.browser.find_element(By.XPATH, "//*[@id='saveColCfgA']//*[text()='保存']").click()
+            self.browser.find_element(By.XPATH, "//*[@id='saveColCfgA']").click()
             alert = BeAlertBox()
             msg = alert.get_msg()
             if alert.title_contains("保存成功", auto_click_ok=False):
@@ -369,7 +370,7 @@ class Template:
                 sleep(1)
             else:
                 log.warning("保存列配置失败，失败提示: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def _transfer_col_map(self, cname):
         # 列名与字段名映射关系
@@ -401,7 +402,8 @@ class Template:
         # 鉴于数据权限问题，在修改/删除数据时，需要判断是否有弹出框提示无权操作
         alert = BeAlertBox(back_iframe=False, timeout=2)
         if alert.exist_alert:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
             return
 
         # 进入表配置页面iframe
@@ -431,7 +433,8 @@ class Template:
         # 鉴于数据权限问题，在修改/删除数据时，需要判断是否有弹出框提示无权操作
         alert = BeAlertBox(back_iframe=False, timeout=2)
         if alert.exist_alert:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
             return
 
         # 进入表配置页面iframe
@@ -461,7 +464,8 @@ class Template:
         # 鉴于数据权限问题，在修改/删除数据时，需要判断是否有弹出框提示无权操作
         alert = BeAlertBox(back_iframe=False, timeout=2)
         if alert.exist_alert:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
             return
 
         # 进入表配置页面iframe
@@ -497,7 +501,7 @@ class Template:
         else:
             # 无权操作
             log.warning("{0} 删除失败，失败提示: {1}".format(zg_temp_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def data_clear(self, zg_temp_name, fuzzy_match=False):
         """
@@ -505,18 +509,13 @@ class Template:
         :param fuzzy_match: 模糊匹配
         """
         # 用于清除数据，在测试之前执行, 使用关键字开头模糊查询
-        self.browser.find_element(
-            By.XPATH, self.tab_xpath + "//*[@name='zgTempName']/preceding-sibling::input").clear()
-        self.browser.find_element(
-            By.XPATH, self.tab_xpath + "//*[@name='zgTempName']/preceding-sibling::input").send_keys(zg_temp_name)
-        self.browser.find_element(By.XPATH, self.tab_xpath + "//*[contains(@data-options,'icon-search-primary')]").click()
-        page_wait()
+        self.search(query={"模版名称": zg_temp_name}, need_choose=False)
         if fuzzy_match:
             record_element = self.browser.find_elements(
-                By.XPATH, self.tab_xpath + "//*[@field='zgTempName']/*[starts-with(text(),'{0}')]".format(zg_temp_name))
+                By.XPATH, self.tab_xpath + "//*[@field='zgTempName']//*[starts-with(text(),'{0}')]".format(zg_temp_name))
         else:
             record_element = self.browser.find_elements(
-                By.XPATH, self.tab_xpath + "//*[@field='zgTempName']/*[text()='{0}']".format(zg_temp_name))
+                By.XPATH, self.tab_xpath + "//*[@field='zgTempName']//*[text()='{0}']".format(zg_temp_name))
         if len(record_element) == 0:
             # 查询结果为空,结束处理
             log.info("查询不到满足条件的数据，无需清理")
@@ -542,11 +541,9 @@ class Template:
                     if fuzzy_match:
                         # 重新获取页面查询结果
                         record_element = self.browser.find_elements(
-                            By.XPATH, self.tab_xpath + "//*[@field='zgTempName']/*[starts-with(text(),'{0}')]".format(
+                            By.XPATH, self.tab_xpath + "//*[@field='zgTempName']//*[starts-with(text(),'{0}')]".format(
                                 zg_temp_name))
-                        if len(record_element) > 0:
-                            exist_data = True
-                        else:
+                        if len(record_element) == 0:
                             # 查询结果为空,修改exist_data为False，退出循环
                             log.info("数据清理完成")
                             exist_data = False
@@ -557,7 +554,7 @@ class Template:
             else:
                 # 无权操作
                 log.warning("{0} 清理失败，失败提示: {1}".format(zg_temp_name, msg))
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
                 break
 
     def copy_zg_temp(self, zg_temp_name, copy_name=None):
@@ -581,7 +578,7 @@ class Template:
             log.info("模版 {0} 复制成功".format(zg_temp_name))
         else:
             log.info("模版 {0} 复制失败，失败原因:{1}".format(zg_temp_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def push_alarm(self, zg_temp_name):
         """
@@ -604,7 +601,7 @@ class Template:
                 log.warning("{0} 推送失败，失败原因: {1}".format(zg_temp_name, msg))
         else:
             log.warning("{0} 推送失败，失败原因: {1}".format(zg_temp_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def sync_alarm(self, zg_temp_name):
         """
@@ -627,7 +624,7 @@ class Template:
                 log.warning("{0} 同步失败，失败原因: {1}".format(zg_temp_name, msg))
         else:
             log.warning("{0} 同步失败，失败原因: {1}".format(zg_temp_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def revoke_alarm(self, zg_temp_name):
         """
@@ -650,7 +647,7 @@ class Template:
                 log.warning("{0} 撤销失败，失败原因: {1}".format(zg_temp_name, msg))
         else:
             log.warning("{0} 撤销失败，失败原因: {1}".format(zg_temp_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def push_dashboard(self, zg_temp_name):
         """
@@ -673,7 +670,7 @@ class Template:
                 log.warning("{0} 推送失败，失败原因: {1}".format(zg_temp_name, msg))
         else:
             log.warning("{0} 推送失败，失败原因: {1}".format(zg_temp_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def sync_dashboard(self, zg_temp_name):
         """
@@ -696,7 +693,7 @@ class Template:
                 log.warning("{0} 同步失败，失败原因: {1}".format(zg_temp_name, msg))
         else:
             log.warning("{0} 同步失败，失败原因: {1}".format(zg_temp_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def revoke_dashboard(self, zg_temp_name):
         """
@@ -719,7 +716,7 @@ class Template:
                 log.warning("{0} 撤销失败，失败原因: {1}".format(zg_temp_name, msg))
         else:
             log.warning("{0} 撤销失败，失败原因: {1}".format(zg_temp_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
 
 class ZgDataManage(Template):
@@ -730,11 +727,11 @@ class ZgDataManage(Template):
         :param zg_temp_name: 模版名称
         """
         current_win_handle = WindowHandles()
-        if get_global_var("ZgTempType") != temp_type:
+        if gbl.service.get("ZgTempName") != zg_temp_name:
             current_win_handle.close(title="数据管理")
         try:
             current_win_handle.switch("数据管理")
-            self.browser = get_global_var("browser")
+            self.browser = gbl.service.get("browser")
             self.temp_type = temp_type
             if self.temp_type == "网元基础信息":
                 self.tab_xpath = "//*[@id='tab1']"
@@ -753,7 +750,7 @@ class ZgDataManage(Template):
             current_win_handle.save("数据管理")
             current_win_handle.switch("数据管理")
         finally:
-            set_global_var("ZgTempType", self.temp_type)
+            gbl.service.set("ZgTempName", zg_temp_name)
             page_wait()
             sleep(1)
 
@@ -835,7 +832,7 @@ class ZgDataManage(Template):
         if alert.exist_alert:
             msg = alert.get_msg()
             log.info("弹出框返回: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
             return
         if need_choose:
             if select_item:
@@ -863,13 +860,13 @@ class ZgDataManage(Template):
         self.data_page(data_info=data_info)
 
         self.browser.find_element(By.XPATH, "//*[@id='saveBtn']").click()
-        alert = BeAlertBox(timeout=30)
+        alert = BeAlertBox(timeout=60)
         msg = alert.get_msg()
         if alert.title_contains("保存成功"):
             log.info("数据保存成功")
         else:
             log.warning("数据保存失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def update_data(self, netunit_name, data_info):
         """
@@ -895,7 +892,7 @@ class ZgDataManage(Template):
             log.info("数据保存成功")
         else:
             log.warning("数据保存失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def data_page(self, data_info):
         """
@@ -923,6 +920,7 @@ class ZgDataManage(Template):
                 panel_xpath = getPanelXpath()
                 self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(col_value)).click()
             log.info("{0} 设置值 {1}".format(col_name, col_value))
+            sleep(1)
 
     def delete_data(self, query):
         """
@@ -950,7 +948,7 @@ class ZgDataManage(Template):
                 log.warning("数据删除失败，失败提示: {0}".format(msg))
         else:
             log.warning("数据删除失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def upload(self, file_path):
         """
@@ -973,7 +971,7 @@ class ZgDataManage(Template):
         result_box = self.browser.find_element(By.XPATH, "//*[@class='r-box']")
         result = result_box.get_attribute("innerText")
         log.info("导入结果: {0}".format(result))
-        set_global_var("ResultMsg", result, False)
+        gbl.temp.set("ResultMsg", result)
 
     def download_templ(self):
         # 下载导入模版
@@ -984,7 +982,7 @@ class ZgDataManage(Template):
         sleep(1)
         self.browser.find_element(By.XPATH, "//*[@id='downloadTmplBtn']").click()
 
-    def download(self):
+    def export(self):
         # 导出
         self.browser.find_element(By.XPATH, "//*[contains(@data-options,'icon-export')]").click()
 
@@ -1003,7 +1001,7 @@ class ZgDataManage(Template):
                 log.warning("删除失败，失败原因: {0}".format(msg))
         else:
             log.warning("删除失败，失败原因: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
 
 class DoubleConfirm(ZgDataManage):
@@ -1086,7 +1084,7 @@ class DoubleConfirm(ZgDataManage):
         if alert.exist_alert:
             msg = alert.get_msg()
             log.info("弹出框返回: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
             return
         if need_choose:
             if select_item:
@@ -1116,7 +1114,7 @@ class DoubleConfirm(ZgDataManage):
         msg = alert.get_msg()
         if alert.title_contains("您确定要确认所选吗", auto_click_ok=False):
             alert.click_ok()
-            alert = BeAlertBox(timeout=30, back_iframe=False)
+            alert = BeAlertBox(timeout=180, back_iframe=False)
             msg = alert.get_msg()
             if alert.title_contains("确认成功"):
                 log.info("确认成功")
@@ -1124,7 +1122,7 @@ class DoubleConfirm(ZgDataManage):
                 log.warning("确认失败，失败原因: {0}".format(msg))
         else:
             log.warning("确认失败，失败原因: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def confirm_all(self, query=None):
         """
@@ -1139,7 +1137,7 @@ class DoubleConfirm(ZgDataManage):
         msg = alert.get_msg()
         if alert.title_contains("您确定要确认全部吗", auto_click_ok=False):
             alert.click_ok()
-            alert = BeAlertBox(timeout=30, back_iframe=False)
+            alert = BeAlertBox(timeout=300, back_iframe=False)
             msg = alert.get_msg()
             if alert.title_contains("确认成功"):
                 log.info("确认成功")
@@ -1147,7 +1145,7 @@ class DoubleConfirm(ZgDataManage):
                 log.warning("确认失败，失败原因: {0}".format(msg))
         else:
             log.warning("确认失败，失败原因: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def revoke_selected(self, ne_list, query=None):
         """
@@ -1174,7 +1172,7 @@ class DoubleConfirm(ZgDataManage):
                 log.warning("撤销失败，失败原因: {0}".format(msg))
         else:
             log.warning("撤销失败，失败原因: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def revoke_all(self, query=None):
         """
@@ -1197,4 +1195,4 @@ class DoubleConfirm(ZgDataManage):
                 log.warning("撤销失败，失败原因: {0}".format(msg))
         else:
             log.warning("撤销失败，失败原因: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)

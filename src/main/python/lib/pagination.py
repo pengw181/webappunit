@@ -2,13 +2,14 @@
 # @Author: peng wei
 # @Time: 2021/8/19 下午4:00
 
+import re
 from time import sleep
 from pykeyboard import PyKeyboard
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import NoSuchElementException
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 from src.main.python.lib.pageMaskWait import page_wait
 
@@ -16,7 +17,7 @@ from src.main.python.lib.pageMaskWait import page_wait
 class Pagination:
 
     def __init__(self, table_xpath):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.table_xpath = table_xpath
 
     def get_total_page_num(self):

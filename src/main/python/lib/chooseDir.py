@@ -8,7 +8,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def choose_ftp_dir(path):
@@ -16,7 +16,7 @@ def choose_ftp_dir(path):
     :param path: 类似根目录-pw-AI
     :return: 点击
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     path_level = path.split("-")
 
     panel_xpath = getPanelXpath()
@@ -59,7 +59,7 @@ def choose_file_dir(dir_name):
     :param dir_name: 目录名
     :return: 点击
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     dir_element = browser.find_elements(
         By.XPATH, "//*[@class='tree-node']/*[@class='tree-title' and text()='{0}']".format(dir_name))
     for element in dir_element:

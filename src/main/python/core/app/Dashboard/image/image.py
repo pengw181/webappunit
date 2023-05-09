@@ -12,7 +12,7 @@ from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.toast import Toast
 from src.main.python.lib.wrap import Wrap
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.core.app.Dashboard.image.imageType import getImageType
 from src.main.python.core.app.Dashboard.image.style.bar import bar_style
 from src.main.python.core.app.Dashboard.image.style.line import line_style
@@ -28,7 +28,7 @@ from src.main.python.core.app.Dashboard.image.style.map import map_style
 class Image:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         wait = WebDriverWait(self.browser, 10)
         wait.until(ec.element_to_be_clickable((By.XPATH, "//*[text()='可视化图像列表']")))
         self.browser.find_element(By.XPATH, "//*[text()='可视化图像列表']").click()
@@ -106,7 +106,7 @@ class Image:
         if toast.exist:
             msg = toast.get_msg()
             log.warning("msg")
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
             return
         page_wait(10)
 
@@ -136,9 +136,10 @@ class Image:
         toast.waitUntil()
         # 保存
         self.browser.find_element(By.XPATH, "//*[@class='imageCfg']/following-sibling::div//*[text()='保存']").click()
-        toast = Toast(3)
+        toast = Toast(timeout=10)
         msg = toast.get_msg()
-        set_global_var("ResultMsg", msg, False)
+        log.info("弹出提示: {}".format(msg))
+        gbl.temp.set("ResultMsg", msg)
 
     def data_source_set(self, y_set, x_set, region, g_info, col_legend, r_set, filter_set, escape):
         """
@@ -652,10 +653,10 @@ class Image:
                 log.info("删除图像【{0}】成功".format(image_name))
             else:
                 log.error("删除图像【{0}】失败，失败原因{1}".format(image_name, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
         else:
             log.error("删除图像【{0}】失败，失败原因{1}".format(image_name, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def imageClear(self, image_name, fuzzy_match=False):
         """
@@ -676,48 +677,48 @@ class Image:
         else:
             record_element = self.browser.find_elements(
                 By.XPATH, "//*[@field='visualImageName']//div[@data-mtips='{0}']".format(image_name))
-        if len(record_element) > 0:
-            exist_data = True
-
-            while exist_data:
-                pe = record_element[0]
-                search_result = pe.text
-                pe.click()
-                log.info("选择: {0}".format(search_result))
-                # 点击删除
-                self.browser.find_element(By.XPATH, "//*[@title='删除可视化图像']").click()
-                alert = BeAlertBox(timeout=1, back_iframe=False)
-                msg = alert.get_msg()
-                if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
-                    alert.click_ok()
-                    toast = Toast()
-                    if toast.exist:
-                        msg = toast.get_msg()
-                        if not toast.msg_contains("删除成功"):
-                            log.info("删除图像失败，失败原因: {0}".format(msg))
-                            set_global_var("ResultMsg", msg, False)
-                            break
-
-                        log.info("{0} {1}".format(search_result, msg))
-                        toast.waitUntil()
-                        if not fuzzy_match:
-                            break
-
-                        # 重新获取页面查询结果
-                        record_element = self.browser.find_elements(
-                            By.XPATH,
-                            "//*[@field='visualImageName']//div[starts-with(@data-mtips,'{0}')]".format(image_name))
-                        if len(record_element) > 0:
-                            exist_data = True
-                        else:
-                            # 查询结果为空,修改exist_data为False，退出循环
-                            log.info("数据清理完成")
-                            exist_data = False
-                else:
-                    # 无权操作
-                    log.warning("清理失败，失败提示: {0}".format(msg))
-                    set_global_var("ResultMsg", msg, False)
-                    break
-        else:
+        if len(record_element) == 0:
             # 查询结果为空,结束处理
             log.info("查询不到满足条件的数据，无需清理")
+            return
+
+        exist_data = True
+        while exist_data:
+            pe = record_element[0]
+            search_result = pe.text
+            pe.click()
+            log.info("选择: {0}".format(search_result))
+            # 点击删除
+            self.browser.find_element(By.XPATH, "//*[@title='删除可视化图像']").click()
+            alert = BeAlertBox(timeout=1, back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
+                alert.click_ok()
+                toast = Toast()
+                if toast.exist:
+                    msg = toast.get_msg()
+                    if not toast.msg_contains("删除成功"):
+                        log.info("删除图像失败，失败原因: {0}".format(msg))
+                        gbl.temp.set("ResultMsg", msg)
+                        break
+
+                    log.info("{0} {1}".format(search_result, msg))
+                    toast.waitUntil()
+                    if not fuzzy_match:
+                        break
+
+                    # 重新获取页面查询结果
+                    record_element = self.browser.find_elements(
+                        By.XPATH,
+                        "//*[@field='visualImageName']//div[starts-with(@data-mtips,'{0}')]".format(image_name))
+                    if len(record_element) > 0:
+                        exist_data = True
+                    else:
+                        # 查询结果为空,修改exist_data为False，退出循环
+                        log.info("数据清理完成")
+                        exist_data = False
+            else:
+                # 无权操作
+                log.warning("清理失败，失败提示: {0}".format(msg))
+                gbl.temp.set("ResultMsg", msg)
+                break

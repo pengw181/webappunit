@@ -8,7 +8,7 @@ from selenium.common.exceptions import NoSuchElementException
 from src.main.python.lib.processVar import choose_var
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def ai_business(node_name, mode, algorithm, model, var_name, param_map, interval, advance_set):
@@ -50,7 +50,7 @@ def ai_business(node_name, mode, algorithm, model, var_name, param_map, interval
     }
 
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     sleep(1)
     # 设置节点名称
     if node_name:
@@ -185,7 +185,7 @@ def ai_business(node_name, mode, algorithm, model, var_name, param_map, interval
         log.info("保存业务配置成功")
     else:
         log.warning("保存业务配置失败，失败提示: {0}".format(msg))
-    set_global_var("ResultMsg", msg, False)
+    gbl.temp.set("ResultMsg", msg)
 
     # 刷新页面，返回画流程图
     browser.refresh()

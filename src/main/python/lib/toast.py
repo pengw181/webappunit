@@ -5,14 +5,14 @@
 from time import sleep
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
 class Toast:
 
     def __init__(self, timeout=10):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         count_times = 0
         while True:
             if count_times < timeout:
@@ -29,11 +29,13 @@ class Toast:
 
     def get_msg(self):
         msg_elements = self.browser.find_elements(By.XPATH, "//*[@id='toast-container']//*[@class='toast-message']")
-        if len(msg_elements) > 0:
-            # 取最后一条信息
+        if len(msg_elements) > 1:
+            # 有则取最后一条信息
             msg = msg_elements[-1].text
-        else:
+        elif len(msg_elements) == 1:
             msg = msg_elements[0].text
+        else:
+            msg = ""
         return msg
 
     def msg_contains(self, content):

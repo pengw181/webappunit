@@ -14,13 +14,13 @@ from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.core.app.VisualModeler.doctorWho import DoctorWho
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class ThirdSystem:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         DoctorWho().choose_menu("常用信息管理-第三方系统管理")
         self.browser.switch_to.frame(
             self.browser.find_element(
@@ -41,16 +41,16 @@ class ThirdSystem:
         # 平台名称
         if query.__contains__("平台名称"):
             platform = query.get("平台名称")
-            self.browser.find_element(By.XPATH, "//*[@name='platform']/preceding-sibling::span/input[1]").clear()
-            self.browser.find_element(By.XPATH, "//*[@name='platform']/preceding-sibling::span/input[1]").send_keys(
+            self.browser.find_element(By.XPATH, "//*[@name='platform']/preceding-sibling::input[1]").clear()
+            self.browser.find_element(By.XPATH, "//*[@name='platform']/preceding-sibling::input[1]").send_keys(
                 platform)
             select_item = platform
 
         # 平台地址
         if query.__contains__("平台地址"):
             visit_url = query.get("平台地址")
-            self.browser.find_element(By.XPATH, "//*[@name='visitUrl']/preceding-sibling::span/input[1]").clear()
-            self.browser.find_element(By.XPATH, "//*[@name='visitUrl']/preceding-sibling::span/input[1]").send_keys(
+            self.browser.find_element(By.XPATH, "//*[@name='visitUrl']/preceding-sibling::input[1]").clear()
+            self.browser.find_element(By.XPATH, "//*[@name='visitUrl']/preceding-sibling::input[1]").send_keys(
                 visit_url)
 
         #  是否验证登录
@@ -72,8 +72,8 @@ class ThirdSystem:
         # 代理名称
         if query.__contains__("代理名称"):
             proxy_name = query.get("代理名称")
-            self.browser.find_element(By.XPATH, "//*[@name='proxyName']/preceding-sibling::span/input[1]").clear()
-            self.browser.find_element(By.XPATH, "//*[@name='proxyName']/preceding-sibling::span/input[1]").send_keys(
+            self.browser.find_element(By.XPATH, "//*[@name='proxyName']/preceding-sibling::input[1]").clear()
+            self.browser.find_element(By.XPATH, "//*[@name='proxyName']/preceding-sibling::input[1]").send_keys(
                 proxy_name)
 
         #  启用代理
@@ -91,7 +91,7 @@ class ThirdSystem:
         if alert.exist_alert:
             msg = alert.get_msg()
             log.info("弹出框返回: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
             return
         if need_choose:
             if select_item:
@@ -119,7 +119,7 @@ class ThirdSystem:
         :param enable_login_set: 是否验证登录，字典
         """
         log.info("开始添加数据")
-        self.browser.find_element(By.XPATH, "//*[@id='btn']").click()
+        self.browser.find_element(By.XPATH, "//*[@id='addBtn']").click()
         wait = WebDriverWait(self.browser, 30)
         wait.until(ec.frame_to_be_available_and_switch_to_it((
             By.XPATH, "//iframe[contains(@src,'nodeVosLoginCfgEdit.html?type=add')]")))
@@ -139,7 +139,7 @@ class ThirdSystem:
             log.info("数据 {0} 添加成功".format(platform))
         else:
             log.warning("数据 {0} 添加失败，失败提示: {1}".format(platform, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def update(self, system, platform, visit_url, network_tag, browser_type, browser_timeout, session_timeout, data_type,
                first_click_set, enable_proxy_set, enable_login_set):
@@ -164,7 +164,8 @@ class ThirdSystem:
         alert = BeAlertBox(back_iframe=False, timeout=1)
         exist = alert.exist_alert
         if exist:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             wait = WebDriverWait(self.browser, 30)
             wait.until(ec.frame_to_be_available_and_switch_to_it((
@@ -186,7 +187,7 @@ class ThirdSystem:
                 log.info("{0} 修改成功".format(system))
             else:
                 log.warning("{0} 修改失败，失败提示: {1}".format(system, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def system_page(self, platform, visit_url, network_tag, browser_type, browser_timeout, session_timeout, data_type,
                     first_click_set, enable_proxy_set, enable_login_set):
@@ -420,13 +421,11 @@ class ThirdSystem:
             self.browser.find_element(By.XPATH, "//*[@name='proxyId']/preceding-sibling::input").click()
             sleep(1)
             try:
+                panel_xpath = getPanelXpath()
                 proxy_element = self.browser.find_element(
-                    By.XPATH, "//*[contains(@id,'proxyId') and text()='{0}']".format(proxy_name))
-                sleep(1)
+                    By.XPATH, panel_xpath + "//*[text()='{0}']".format(proxy_name))
                 action = ActionChains(self.browser)
-                action.move_to_element(proxy_element).perform()
-                self.browser.find_element(
-                    By.XPATH, "//*[contains(@id,'proxyId') and text()='{0}']".format(proxy_name)).click()
+                action.move_to_element(proxy_element).click().perform()
                 log.info("已选择代理: {0}".format(proxy_name))
             except NoSuchElementException:
                 raise NoSuchElementException("找不到指定代理: {0}".format(proxy_name))
@@ -881,7 +880,8 @@ class ThirdSystem:
         alert = BeAlertBox(back_iframe=False, timeout=1)
         exist = alert.exist_alert
         if exist:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             wait = WebDriverWait(self.browser, 30)
             wait.until(ec.frame_to_be_available_and_switch_to_it((
@@ -891,7 +891,7 @@ class ThirdSystem:
             wait.until(ec.element_to_be_clickable((By.XPATH, "//*[@name='platform']/preceding-sibling::input")))
 
             # 点击测试按钮
-            self.browser.find_element(By.XPATH, "//*[@id='testBtn']//*[text()='测试']").click()
+            self.browser.find_element(By.XPATH, "//*[@id='testBtn']").click()
             log.info("点击测试按钮开始测试...")
             sleep(1)
             try:
@@ -921,7 +921,7 @@ class ThirdSystem:
                             By.XPATH, "//iframe[contains(@src,'nodeVosLoginCfgEdit.html?type=edit')]")))
                     else:
                         log.warning("手机验验证码保存失败，测试返回结果: {0}".format(msg))
-                        set_global_var("ResultMsg", msg, False)
+                        gbl.temp.set("ResultMsg", msg)
                         return
                 else:
                     # 未输入手机验证码
@@ -934,7 +934,7 @@ class ThirdSystem:
                 log.info("{0} 测试成功".format(platform))
             else:
                 log.warning("{0} 测试失败，测试返回结果: {1}".format(platform, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def delete(self, platform):
         """
@@ -959,7 +959,7 @@ class ThirdSystem:
             log.warning("{0} 删除失败，失败提示: {1}".format(platform, msg))
         else:
             log.warning("{0} 删除失败，失败提示: {1}".format(platform, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def data_clear(self, platform, fuzzy_match=False):
         """
@@ -967,57 +967,50 @@ class ThirdSystem:
         :param fuzzy_match: 模糊匹配
         """
         # 用于清除数据，在测试之前执行, 使用关键字开头模糊查询
-        self.browser.find_element(By.XPATH, "//*[@name='platform']/preceding-sibling::input").clear()
-        self.browser.find_element(By.XPATH, "//*[@name='platform']/preceding-sibling::input").send_keys(platform)
-        self.browser.find_element(By.XPATH, "//*[@id='btn']//*[text()='查询']").click()
-        page_wait()
+        self.search(query={"平台名称": platform}, need_choose=False)
         fuzzy_match = True if fuzzy_match == "是" else False
         if fuzzy_match:
             record_element = self.browser.find_elements(
-                By.XPATH, "//*[@field='platform']/*[contains(@class,'platform')]/*[starts-with(text(),'{0}')]".format(
-                    platform))
+                By.XPATH, "//*[@field='platform']//*[starts-with(text(),'{0}')]".format(platform))
         else:
             record_element = self.browser.find_elements(
-                By.XPATH, "//*[@field='platform']/*[contains(@class,'platform')]/*[text()='{0}']".format(platform))
-        if len(record_element) > 0:
-            exist_data = True
-
-            while exist_data:
-                pe = record_element[0]
-                search_result = pe.text
-                pe.click()
-                log.info("选择: {0}".format(search_result))
-                # 删除
-                self.browser.find_element(By.XPATH, "//*[@id='delBtn']").click()
-                alert = BeAlertBox(back_iframe=False)
-                msg = alert.get_msg()
-                if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
-                    alert.click_ok()
-                    alert = BeAlertBox(back_iframe=False)
-                    msg = alert.get_msg()
-                    if alert.title_contains("成功"):
-                        log.info("{0} 删除成功".format(search_result))
-                        page_wait()
-                        if fuzzy_match:
-                            # 重新获取页面查询结果
-                            record_element = self.browser.find_elements(
-                                By.XPATH, "//*[@field='platform']/*[contains(@class,'platform')]/*[starts-with(text(),'{0}')]".format(
-                                    platform))
-                            if len(record_element) > 0:
-                                exist_data = True
-                            else:
-                                # 查询结果为空,修改exist_data为False，退出循环
-                                log.info("数据清理完成")
-                                exist_data = False
-                        else:
-                            break
-                    else:
-                        raise Exception("删除数据时出现未知异常: {0}".format(msg))
-                else:
-                    # 无权操作
-                    log.warning("{0} 清理失败，失败提示: {1}".format(platform, msg))
-                    set_global_var("ResultMsg", msg, False)
-                    break
-        else:
+                By.XPATH, "//*[@field='platform']//*[text()='{0}']".format(platform))
+        if len(record_element) == 0:
             # 查询结果为空,结束处理
             log.info("查询不到满足条件的数据，无需清理")
+            return
+
+        exist_data = True
+        while exist_data:
+            pe = record_element[0]
+            search_result = pe.text
+            pe.click()
+            log.info("选择: {0}".format(search_result))
+            # 删除
+            self.browser.find_element(By.XPATH, "//*[@id='delBtn']").click()
+            alert = BeAlertBox(back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
+                alert.click_ok()
+                alert = BeAlertBox(back_iframe=False)
+                msg = alert.get_msg()
+                if alert.title_contains("成功"):
+                    log.info("{0} 删除成功".format(search_result))
+                    page_wait()
+                    if fuzzy_match:
+                        # 重新获取页面查询结果
+                        record_element = self.browser.find_elements(
+                            By.XPATH, "//*[@field='platform']//*[starts-with(text(),'{0}')]".format(platform))
+                        if len(record_element) == 0:
+                            # 查询结果为空,修改exist_data为False，退出循环
+                            log.info("数据清理完成")
+                            exist_data = False
+                    else:
+                        break
+                else:
+                    raise Exception("删除数据时出现未知异常: {0}".format(msg))
+            else:
+                # 无权操作
+                log.warning("{0} 清理失败，失败提示: {1}".format(platform, msg))
+                gbl.temp.set("ResultMsg", msg)
+                break

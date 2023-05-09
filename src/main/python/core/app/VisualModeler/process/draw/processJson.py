@@ -5,7 +5,7 @@
 import jsonpath
 import json
 from src.main.python.db.SQLHelper import SQLUtil
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
@@ -13,7 +13,7 @@ class ProcessNodeJson:
 
     def __init__(self, process_name):
         self.sql = "select json from tn_process_conf_info t where t.PROCESS_NAME='{0}'".format(process_name)
-        sql_util = SQLUtil(db=get_global_var("Database"), schema="main")
+        sql_util = SQLUtil(db=gbl.service.get("Database"), schema="main")
         result = sql_util.select(self.sql)
         self.result_json = json.dumps(json.loads(result), indent=4, ensure_ascii=False)
         log.debug(self.result_json)
@@ -25,7 +25,7 @@ class ProcessNodeJson:
         log.info("json结果: \n{0}".format(self.result_json))
 
     def reload(self):
-        sql_util = SQLUtil(db=get_global_var("Database"), schema="main")
+        sql_util = SQLUtil(db=gbl.service.get("Database"), schema="main")
         result = sql_util.select(self.sql)
         self.result_json = json.loads(result)
         self.nodes = jsonpath.jsonpath(self.result_json, "$.nodes")[0]
@@ -227,7 +227,7 @@ class ProcessNodeJson:
 
 
 if __name__ == "__main__":
-    set_global_var("Database", 'v31.maria')
+    gbl.service.set("Database", 'v31.maria')
     p = ProcessNodeJson("pw自动化测试全流程")
     log.info(p.nodes)
     log.info(p.count_node())

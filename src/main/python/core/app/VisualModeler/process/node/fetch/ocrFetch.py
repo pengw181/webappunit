@@ -9,7 +9,7 @@ from selenium.webdriver.support import expected_conditions as ec
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def ocr_fetch(opt, target_var, var_name, result_type, get_col_name, value_type):
@@ -47,7 +47,7 @@ def ocr_fetch(opt, target_var, var_name, result_type, get_col_name, value_type):
     }
 
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     page_wait()
     if opt == "添加":
         browser.find_element(By.XPATH, "//*[@onclick='addOcrVarInfo()']").click()
@@ -102,7 +102,7 @@ def ocr_fetch(opt, target_var, var_name, result_type, get_col_name, value_type):
             log.info("保存取数配置成功")
         else:
             log.warning("保存取数配置失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     elif opt == "修改":
         browser.find_element(By.XPATH, "//*[@field='varName']//*[text()='{0}']".format(target_var)).click()
@@ -159,7 +159,7 @@ def ocr_fetch(opt, target_var, var_name, result_type, get_col_name, value_type):
             log.info("保存取数配置成功")
         else:
             log.warning("保存取数配置失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     else:
         browser.find_element(By.XPATH, "//*[@field='varName']//*[text()='{0}']".format(target_var)).click()
@@ -177,12 +177,12 @@ def ocr_fetch(opt, target_var, var_name, result_type, get_col_name, value_type):
                 log.info("删除取数配置成功")
             else:
                 log.warning("删除取数配置失败，失败提示: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
         else:
             log.warning("删除取数配置失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     # 切换到节点iframe
-    browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+    browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
     # 切换到取数配置iframe
     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[contains(@src,'getdataOcrNode.html')]"))

@@ -2,23 +2,25 @@
 # @Author: peng wei
 # @Time: 2021/12/24 下午3:06
 
+import json
 from time import sleep
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
+from selenium.common.exceptions import NoSuchElementException
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.input import set_textarea
 from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.core.app.AlarmPlatform.menu import choose_menu
 from src.main.python.lib.alertBox import BeAlertBox
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
 class Dictionary:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.upperOrLower = None
         # 进入菜单
         choose_menu("告警配置-字典配置")
@@ -32,17 +34,57 @@ class Dictionary:
         page_wait()
         sleep(1)
 
-    def choose(self, dict_name):
+    def search(self, query, need_choose=False):
         """
-        :param dict_name: 字典名称
+        :param query: 查询条件，字典
+        :param need_choose: True/False
         """
-        input_ele = self.browser.find_element(By.XPATH, "//*[@name='dictGroupName']/preceding-sibling::input")
-        input_ele.clear()
-        input_ele.send_keys(dict_name)
+        if not isinstance(query, dict):
+            raise TypeError("查询条件需要是字典格式")
+        log.info("查询条件: {0}".format(json.dumps(query, ensure_ascii=False)))
+        select_item = None
+
+        # 字典组名称
+        if query.__contains__("字典组名称"):
+            dict_name = query.get("字典组名称")
+            self.browser.find_element(By.XPATH, "//*[@name='dictGroupName']/preceding-sibling::input[1]").clear()
+            self.browser.find_element(
+                By.XPATH, "//*[@name='dictGroupName']/preceding-sibling::input[1]").send_keys(dict_name)
+            select_item = dict_name
+
+        # 字典类型
+        if query.__contains__("字典类型"):
+            dict_type = query.get("字典类型")
+            self.browser.find_element(By.XPATH, "//*[@name='dictGroupType']/preceding-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(dict_type)).click()
+
+        # 字典表名称
+        if query.__contains__("字典表名称"):
+            dict_table_name = query.get("字典表名称")
+            self.browser.find_element(By.XPATH, "//*[@name='dictItemTableName']/preceding-sibling::input[1]").clear()
+            self.browser.find_element(By.XPATH, "//*[@name='dictItemTableName']/preceding-sibling::input[1]").send_keys(
+                dict_table_name)
+
+        # 查询
         self.browser.find_element(By.XPATH, "//*[@funcid='AlarmPlatform_dict_query']").click()
         page_wait()
-        self.browser.find_element(By.XPATH, "//*[@field='dictGroupName']//a[text()='{}']".format(dict_name)).click()
-        log.info("已选择字典: {}".format(dict_name))
+        alert = BeAlertBox(timeout=1, back_iframe=False)
+        if alert.exist_alert:
+            msg = alert.get_msg()
+            log.info("弹出框返回: {0}".format(msg))
+            gbl.temp.set("ResultMsg", msg)
+            return
+        if need_choose:
+            if select_item:
+                try:
+                    self.browser.find_element(
+                        By.XPATH, "//*[@field='dictGroupName']//*[text()='{0}']".format(select_item)).click()
+                except NoSuchElementException:
+                    raise KeyError("未找到匹配数据")
+                log.info("选择: {0}".format(select_item))
+            else:
+                raise KeyError("条件不足，无法选择数据")
 
     def add(self, dict_name, comment, dict_type, table_belong, item_key, item_value, filter_set):
         """
@@ -74,21 +116,21 @@ class Dictionary:
             log.info("{0} 添加成功".format(dict_name))
         else:
             log.warning("{0} 添加失败，失败提示: {1}".format(dict_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
-    def update(self, obj, dict_name, comment, filter_set):
+    def update(self, dict_group, dict_name, comment, filter_set):
         """
-        :param obj: 字典组名称
+        :param dict_group: 字典组名称
         :param dict_name: 字典组名称
         :param comment: 字典描述
         :param filter_set: 过滤条件
         """
-        log.info("开始修改数据")
-        self.choose(obj)
+        self.search(query={"字典组名称": dict_group}, need_choose=True)
         self.browser.find_element(By.XPATH, "//*[@id='editBtn']").click()
         alert = BeAlertBox(timeout=1, back_iframe=False)
         if alert.exist_alert:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
             return
 
         self.browser.switch_to.parent_frame()
@@ -107,10 +149,10 @@ class Dictionary:
         alert = BeAlertBox()
         msg = alert.get_msg()
         if alert.title_contains("保存成功"):
-            log.info("{0} 修改成功".format(obj))
+            log.info("{0} 修改成功".format(dict_group))
         else:
-            log.warning("{0} 修改失败，失败提示: {1}".format(obj, msg))
-        set_global_var("ResultMsg", msg, False)
+            log.warning("{0} 修改失败，失败提示: {1}".format(dict_group, msg))
+        gbl.temp.set("ResultMsg", msg)
 
     def dict_page(self, dict_name, comment, dict_type, table_belong, item_key, item_value, filter_set):
         """
@@ -163,7 +205,8 @@ class Dictionary:
             self.browser.find_element(
                 By.XPATH, "//*[@id='editDiv']//*[@id='dictGroupName']/following-sibling::span/input[1]").clear()
             self.browser.find_element(
-                By.XPATH, "//*[@id='editDiv']//*[@id='dictGroupName']/following-sibling::span/input[1]").send_keys(dict_name)
+                By.XPATH, "//*[@id='editDiv']//*[@id='dictGroupName']/following-sibling::span/input[1]").send_keys(
+                dict_name)
             log.info("设置字典组名称: {0}".format(dict_name))
 
         # 字典描述
@@ -345,7 +388,7 @@ class Dictionary:
                     sleep(1)
                 else:
                     log.warning("条件 {0} 删除失败，失败提示: {1}".format(row_index, msg))
-                    set_global_var("ResultMsg", msg, False)
+                    gbl.temp.set("ResultMsg", msg)
                     return
 
     def set_dict_detail(self, dict_name, detail):
@@ -375,12 +418,12 @@ class Dictionary:
 
 
         """
-        log.info("开始编辑字典明细")
-        self.choose(dict_name)
+        self.search(query={"字典组名称": dict_name}, need_choose=True)
         self.browser.find_element(By.XPATH, "//*[@id='editDictBtn']").click()
         alert = BeAlertBox(timeout=1, back_iframe=False)
         if alert.exist_alert:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
             return
 
         self.browser.switch_to.parent_frame()
@@ -423,11 +466,11 @@ class Dictionary:
                         wait.until(ec.frame_to_be_available_and_switch_to_it((
                             By.XPATH,
                             "//iframe[contains(@src,'/AlarmPlatform/html/dataConfig/dictionary/dictDetail.html')]")))
-                        set_global_var("ResultMsg", msg, False)
+                        gbl.temp.set("ResultMsg", msg)
                         sleep(1)
                     else:
                         log.warning("关键字 {0} 保存失败，失败提示: {1}".format(_key, msg))
-                        set_global_var("ResultMsg", msg, False)
+                        gbl.temp.set("ResultMsg", msg)
                         return
 
             elif action == "编辑":
@@ -466,7 +509,7 @@ class Dictionary:
                     log.info("关键字 {0} 保存成功".format(key))
                 else:
                     log.warning("关键字 {0} 保存失败，失败提示: {1}".format(key, msg))
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
 
             else:
                 key = detail.get("关键字")
@@ -502,8 +545,8 @@ class Dictionary:
                         else:
                             msg = alert.get_msg()
                             log.warning("关键字 {0} 删除失败，失败提示: {1}".format(key, msg))
-                            set_global_var("ResultMsg", msg, False)
+                            gbl.temp.set("ResultMsg", msg)
                             break
                     else:
                         log.warning("关键字 {0} 删除失败，失败提示: {1}".format(key, msg))
-                    set_global_var("ResultMsg", msg, False)
+                    gbl.temp.set("ResultMsg", msg)

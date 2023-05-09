@@ -11,9 +11,10 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.input import set_textarea
+from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.lib.loadData import load_sample
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def regular_cube(set_type=None, regular_name=None, advance_mode=None, regular=None, expression=None, enable_check=None,
@@ -91,13 +92,13 @@ def regular_cube(set_type=None, regular_name=None, advance_mode=None, regular=No
         "样例数据": "ping_sample.txt"
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     page_wait()
     sleep(1)
     # 聚焦元素
     if regular_name:
-        reg_temp_name_input = browser.find_element_by_xpath(
-            confirm_selector + "//*[contains(@class,'regxTemplName')]/following-sibling::span/input[1]")
+        reg_temp_name_input = browser.find_element(
+            By.XPATH, confirm_selector + "//*[contains(@class,'regxTemplName')]/following-sibling::span/input[1]")
         browser.execute_script("arguments[0].scrollIntoView(true);", reg_temp_name_input)
 
     log.info("开始配置正则")
@@ -109,47 +110,46 @@ def regular_cube(set_type=None, regular_name=None, advance_mode=None, regular=No
     if set_type == "选择":
 
         # 点击查询正则模版
-        browser.find_element_by_xpath(confirm_selector + "//*[contains(@class,'regexSearch')]/span/span[2]").click()
+        browser.find_element(By.XPATH, confirm_selector + "//*[contains(@class,'regexSearch')]/span/span[2]").click()
         page_wait()
         # 进入正则模版页面，切换iframe
         browser.switch_to.frame(
-            browser.find_element_by_xpath(
-                "//iframe[contains(@src,'/VisualModeler/frame/regexcube/regexpTmplSelectWin.html?')]"))
+            browser.find_element(
+                By.XPATH, "//iframe[contains(@src,'/VisualModeler/frame/regexcube/regexpTmplSelectWin.html?')]"))
         # 等待页面加载
         wait = WebDriverWait(browser, 30)
         wait.until(ec.element_to_be_clickable((By.XPATH, "//*[@name='keyword']/preceding-sibling::input")))
         page_wait()
         # 输入正则模版名称
-        browser.find_element_by_xpath("//*[@name='keyword']/preceding-sibling::input").send_keys(regular_name)
+        browser.find_element(By.XPATH, "//*[@name='keyword']/preceding-sibling::input").send_keys(regular_name)
         # 点击查询
-        browser.find_element_by_xpath("//*[@id='regexp-query']//*[text()='查询']").click()
+        browser.find_element(By.XPATH, "//*[@id='regexp-query']").click()
         page_wait()
         # 勾选正则模版
-        browser.find_element_by_xpath(
-            "//*[contains(@id,'regexpTab_datagrid-row-')]//*[text()='{0}']".format(regular_name)).click()
+        browser.find_element(
+            By.XPATH, "//*[contains(@id,'regexpTab_datagrid-row-')]//*[text()='{0}']".format(regular_name)).click()
         # 点击确认
-        browser.find_element_by_xpath("//*[@id='regexp-ok']//*[text()='确定']").click()
+        browser.find_element(By.XPATH, "//*[@id='regexp-ok']").click()
         # 切到上级iframe
         browser.switch_to.parent_frame()
         log.info("选择正则: {0}".format(regular_name))
 
-        obj_lis = browser.find_elements_by_xpath(confirm_selector + "//*[@class='tag_pool']/div/ul/li")
+        obj_lis = browser.find_elements(By.XPATH, confirm_selector + "//*[@class='tag_pool']/div/ul/li")
         obj_id_list = []
         if len(obj_lis) > 0:
             for obj in obj_lis:
                 obj_id_list.append(obj.get_attribute("obj_id"))
             log.info("从正则魔方获取标签obj_id: {0}".format(obj_id_list))
-            set_global_var("ObjIDs", obj_id_list, False)
+            gbl.temp.set("ObjIDs", obj_id_list)
 
     elif set_type == "添加":
         # 判断是否高级模式
         if advance_mode == "是":
             # 点击启用高级功能
-            browser.find_element_by_xpath(confirm_selector + "//*[contains(text(),'启用高级功能')]").click()
+            browser.find_element(By.XPATH, confirm_selector + "//*[contains(text(),'启用高级功能')]").click()
             # 输入表达式，\需要换成\\
-            browser.find_element_by_xpath(
-                confirm_selector +
-                "//*[contains(text(),'表达式')]/../../following-sibling::div[1]//*[contains(@id,'_textbox_')]").send_keys(
+            browser.find_element(
+                By.XPATH, confirm_selector + "//*[contains(text(),'表达式')]/../../following-sibling::div[1]//*[contains(@id,'_textbox_')]").send_keys(
                 expression)
         else:
             rows = len(regular)
@@ -162,17 +162,18 @@ def regular_cube(set_type=None, regular_name=None, advance_mode=None, regular=No
                 label_type = get_label_type(tag_name)
 
                 # 将标签拖入表达式池
-                tag_element = browser.find_element_by_xpath(
-                    confirm_selector + "//*[@class ='label-btn' and text()='{0}']".format(tag_name))
-                text_element = browser.find_element_by_xpath(
-                    confirm_selector + "//*[text()='标签池']/../following-sibling::div")
+                tag_element = browser.find_element(
+                    By.XPATH, confirm_selector + "//*[@class ='label-btn' and text()='{0}']".format(tag_name))
+                text_element = browser.find_element(
+                    By.XPATH, confirm_selector + "//*[text()='标签池']/../following-sibling::div")
                 action = ActionChains(browser)
                 action.drag_and_drop(tag_element, text_element).perform()
                 sleep(1)
 
                 # 单击加入到标签池的新标签
-                browser.find_element_by_xpath(
-                    confirm_selector + "//*[@label_id='{}' and contains(@class,'current')]".format(label_type)).click()
+                browser.find_element(
+                    By.XPATH, confirm_selector + "//*[@label_id='{}' and contains(@class,'current')]".format(
+                        label_type)).click()
 
                 # 按不同类型配置标签值
                 set_label_attribute(browser=browser, confirm_selector=confirm_selector, label_name=tag_msg.get("标签"),
@@ -217,9 +218,8 @@ def regular_cube(set_type=None, regular_name=None, advance_mode=None, regular=No
 
                 if tag_value is None:
                     raise KeyError("定位标签的属性值为空，如长度字段缺失")
-                browser.find_element_by_xpath(
-                    confirm_selector +
-                    "//*[@label_id='{0}' and contains(@class,'current')]//*[text()='{1}']/../following-sibling::div[1]/*[contains(@class,'{2}')]".format(
+                browser.find_element(
+                    By.XPATH, confirm_selector + "//*[@label_id='{0}' and contains(@class,'current')]//*[text()='{1}']/../following-sibling::div[1]/*[contains(@class,'{2}')]".format(
                         label_type, tag_value, color_button)).click()
                 log.info("正则标签池加入标签: {0}".format(tag_name))
                 sleep(1)
@@ -234,49 +234,49 @@ def regular_cube(set_type=None, regular_name=None, advance_mode=None, regular=No
 
                 # 输入样例数据
                 try:
-                    check_textarea = browser.find_element_by_xpath("//*[@class='testDiv']/*[@class='srcText']/textarea")
+                    check_textarea = browser.find_element(By.XPATH, "//*[@class='testDiv']/*[@class='srcText']/textarea")
                     set_textarea(check_textarea, sample_data)
                     log.info("输入样例数据")
                 except NoSuchElementException:
-                    browser.find_element_by_xpath("//*[@class='my_checkbox2' and contains(text(),'验证')]").click()
-                    check_textarea = browser.find_element_by_xpath("//*[@class='testDiv']/*[@class='srcText']/textarea")
+                    browser.find_element(By.XPATH, "//*[@class='my_checkbox2' and contains(text(),'验证')]").click()
+                    check_textarea = browser.find_element(By.XPATH, "//*[@class='testDiv']/*[@class='srcText']/textarea")
                     set_textarea(check_textarea, sample_data)
                     log.info("输入样例数据")
 
                 # 进行结果验证
-                validateBtn = browser.find_element_by_xpath("//*[@class='testDiv']/*[@class='validateBtn']")
+                validateBtn = browser.find_element(By.XPATH, "//*[@class='testDiv']/*[@class='validateBtn']")
                 browser.execute_script("arguments[0].scrollIntoView(true);", validateBtn)
                 validateBtn.click()
                 page_wait()
-                # result_textarea = browser.find_element_by_xpath("//*[@class='testDiv']/*[@class='destText']/textarea")
+                # result_textarea = browser.find_element(By.XPATH, "//*[@class='testDiv']/*[@class='destText']/textarea")
                 # test_result = result_textarea.get_attribute("")
             else:
                 try:
-                    browser.find_element_by_xpath("//*[@class='testDiv']/*[@class='srcText']/textarea")
-                    browser.find_element_by_xpath("//*[@class='my_checkbox2' and contains(text(),'验证')]").click()
+                    browser.find_element(By.XPATH, "//*[@class='testDiv']/*[@class='srcText']/textarea")
+                    browser.find_element(By.XPATH, "//*[@class='my_checkbox2' and contains(text(),'验证')]").click()
                 except NoSuchElementException:
                     log.info("关闭【验证】")
 
         # 正则模版名称
         if regular_name:
             # 点击保存模版
-            browser.find_element_by_xpath(confirm_selector + "//*[text()='保存模版']").click()
+            browser.find_element(By.XPATH, confirm_selector + "//*[text()='保存模版']").click()
             # 切换到保存正则模版的iframe
             browser.switch_to.frame(
-                browser.find_element_by_xpath(
-                    "//iframe[contains(@src,'/VisualModeler/frame/regexcube/regexpTmplSaveWin.html?')]"))
+                browser.find_element(
+                    By.XPATH, "//iframe[contains(@src,'/VisualModeler/frame/regexcube/regexpTmplSaveWin.html?')]"))
             # 输入正则模版名称，加上_时间戳
             wait = WebDriverWait(browser, 30)
             wait.until(ec.element_to_be_clickable((
                 By.XPATH, "//*[contains(text(),'模版名称')]/../following-sibling::div[1]//*[contains(@id,'_textbox_input')]")))
             if attach_timestamp:
                 regular_name = regular_name + '_' + datetime.now().strftime('%Y%m%d%H%M%S')
-            set_global_var("RegularName", regular_name)
-            browser.find_element_by_xpath(
-                "//*[contains(text(),'模版名称')]/../following-sibling::div[1]//*[contains(@id,'_textbox_input')]").send_keys(
+            gbl.service.set("RegularName", regular_name)
+            browser.find_element(
+                By.XPATH, "//*[contains(text(),'模版名称')]/../following-sibling::div[1]//*[contains(@id,'_textbox_input')]").send_keys(
                 regular_name)
             # 点击提交
-            browser.find_element_by_xpath("//*[@id='regex-save']//*[text()='提交']").click()
+            browser.find_element(By.XPATH, "//*[@id='regex-save']//*[text()='提交']").click()
         else:
             # 正则模版管理不需要保存模版名称，会有其他字段来保存
             pass
@@ -353,52 +353,42 @@ def set_label_attribute(browser, confirm_selector, label_name, tag_info):
         if tag_info.__contains__("自定义值"):
             custom_value = tag_info.get("自定义值")
             # 输入标签值
-            browser.find_element_by_xpath(
-                confirm_selector +
-                "//*[text()='标签属性']/following-sibling::div//*[contains(@id,'_textbox_')]").send_keys(custom_value)
+            browser.find_element(
+                By.XPATH, confirm_selector + "//*[text()='标签属性']/following-sibling::div//*[contains(@id,'_textbox_')]").send_keys(
+                custom_value)
 
         # 点击保存属性
-        browser.find_element_by_xpath(confirm_selector + "//*[text()='保存属性']").click()
+        browser.find_element(By.XPATH, confirm_selector + "//*[text()='保存属性']").click()
 
     elif label_name in ["任意字符", "任意中文字符", "字母", "空格", "任意非空格", "字母/数字", "换行"]:
         if tag_info.__contains__("长度"):
             length = tag_info.get("长度")
             # 点击下拉框
-            browser.find_element_by_xpath(
-                confirm_selector +
-                "//*[text()='标签属性']/following-sibling::div//*[contains(@class,'combo-arrow')]").click()
+            browser.find_element(
+                By.XPATH, confirm_selector + "//*[text()='标签属性']/following-sibling::div//*[contains(@class,'combo-arrow')]").click()
             sleep(1)
             # 选择属性
-            elements = browser.find_elements_by_xpath(
-                "//*[contains(@id,'easyui_combobox_') and text()='{0}']".format(length))
-            for element in elements:
-                if element.is_displayed():
-                    element.click()
-                    break
+            panel_xpath = getPanelXpath()
+            browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(length)).click()
             sleep(1)
 
         # 点击保存属性
-        browser.find_element_by_xpath(confirm_selector + "//*[text()='保存属性']").click()
+        browser.find_element(By.XPATH, confirm_selector + "//*[text()='保存属性']").click()
 
     elif label_name == "日期":
         if tag_info.__contains__("时间格式"):
             time_format = tag_info.get("时间格式")
             # 点击下拉框
-            browser.find_element_by_xpath(
-                confirm_selector +
-                "//*[text()='标签属性']/following-sibling::div//*[contains(@class,'combo-arrow')]").click()
+            browser.find_element(
+                By.XPATH, confirm_selector + "//*[text()='标签属性']/following-sibling::div//*[contains(@class,'combo-arrow')]").click()
             sleep(1)
             # 选择属性
-            elements = browser.find_elements_by_xpath(
-                "//*[contains(@id,'easyui_combobox_') and text()='{0}']".format(time_format))
-            for element in elements:
-                if element.is_displayed():
-                    element.click()
-                    break
+            panel_xpath = getPanelXpath()
+            browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(time_format)).clck()
             sleep(1)
 
         # 点击保存属性
-        browser.find_element_by_xpath(confirm_selector + "//*[text()='保存属性']").click()
+        browser.find_element(By.XPATH, confirm_selector + "//*[text()='保存属性']").click()
 
     elif label_name == "数字":
         # 正数负数
@@ -412,101 +402,86 @@ def set_label_attribute(browser, confirm_selector, label_name, tag_info):
                 pn_value = "pn"
             else:
                 raise KeyError("标签为数字时，数字仅支持：正数、负数、正数负数，当前值为：{} ".format(positive_negative))
-            browser.find_element_by_xpath("//*[@name='isPn' and @value='{}']".format(pn_value)).click()
+            browser.find_element(By.XPATH, "//*[@name='isPn' and @value='{}']".format(pn_value)).click()
 
         # 匹配小数
         if tag_info.__contains__("匹配小数"):
             if tag_info.get("匹配小数") == "是":
-                browser.find_element_by_xpath(
-                    "//*[@class='my_checkbox2' and contains(text(),'匹配小数(选中将匹配小数点)')]").click()
+                browser.find_element(
+                    By.XPATH, "//*[@class='my_checkbox2' and contains(text(),'匹配小数(选中将匹配小数点)')]").click()
 
         # 匹配小数
         if tag_info.__contains__("匹配%"):
             if tag_info.get("匹配%") == "是":
-                browser.find_element_by_xpath(
-                    "//*[@class='my_checkbox2' and contains(text(),'匹配%(选中将匹配带%的数字)')]").click()
+                browser.find_element(
+                    By.XPATH, "//*[@class='my_checkbox2' and contains(text(),'匹配%(选中将匹配带%的数字)')]").click()
 
         # 匹配千分位
         if tag_info.__contains__("匹配千分位"):
             if tag_info.get("匹配千分位") == "是":
-                browser.find_element_by_xpath(
-                    "//*[@name='regex_comma']/../../*[contains(text(),'匹配“,”(匹配带千位分隔符“,”的数字)')]").click()
+                browser.find_element(
+                    By.XPATH, "//*[@name='regex_comma']/../../*[contains(text(),'匹配“,”(匹配带千位分隔符“,”的数字)')]").click()
 
         # 匹配并去掉逗号
         if tag_info.__contains__("匹配并去掉逗号"):
             if tag_info.get("匹配并去掉逗号") == "是":
-                browser.find_element_by_xpath(
-                    "//*[@name='regex_comma']/../../*[contains(text(),'匹配“,”号，并去掉“,”号')]").click()
+                browser.find_element(
+                    By.XPATH, "//*[@name='regex_comma']/../../*[contains(text(),'匹配“,”号，并去掉“,”号')]").click()
 
         if tag_info.__contains__("长度"):
             length = tag_info.get("长度")
             # 点击长度下拉框
-            browser.find_element_by_xpath(
-                confirm_selector +
-                "//*[text()='标签属性']/following-sibling::div//*[contains(@class,'combo-arrow')]").click()
+            browser.find_element(
+                By.XPATH, confirm_selector + "//*[text()='标签属性']/following-sibling::div//*[contains(@class,'combo-arrow')]").click()
             sleep(1)
 
             # 选择长度属性
-            elements = browser.find_elements_by_xpath(
-                "//*[contains(@id,'easyui_combobox_') and text()='{0}']".format(length))
-            for element in elements:
-                if element.is_displayed():
-                    element.click()
-                    break
+            panel_xpath = getPanelXpath()
+            browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(length)).click()
             sleep(1)
 
         # 点击保存属性
-        browser.find_element_by_xpath(confirm_selector + "//*[text()='保存属性']").click()
+        browser.find_element(By.XPATH, confirm_selector + "//*[text()='保存属性']").click()
 
     elif label_name == "特殊字符":
         if tag_info.__contains__("特殊字符"):
             # 点击特殊字符下拉框
             special_char = tag_info.get("特殊字符")
-            browser.find_element_by_xpath(
-                confirm_selector +
-                "//*[text()='标签属性']/following-sibling::div//*[text()='特殊字符']/following-sibling::span//*[contains(@class,'combo-arrow')]").click()
+            browser.find_element(
+                By.XPATH, confirm_selector + "//*[text()='标签属性']/following-sibling::div//*[text()='特殊字符']/following-sibling::span//*[contains(@class,'combo-arrow')]").click()
             sleep(1)
             # 选择特殊字符
-            elements = browser.find_elements_by_xpath(
-                "//*[contains(@id,'easyui_combobox_') and text()='{0}']".format(special_char))
-            for element in elements:
-                if element.is_displayed():
-                    element.click()
-                    break
+            panel_xpath = getPanelXpath()
+            browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(special_char)).click()
             sleep(1)
 
         if tag_info.__contains__("长度"):
             # 点击长度下拉框
             length = tag_info.get("长度")
-            browser.find_element_by_xpath(
-                confirm_selector +
-                "//*[text()='标签属性']/following-sibling::div//*[text()='长度']/following-sibling::span//*[contains(@class,'combo-arrow')]").click()
+            browser.find_element(
+                By.XPATH, confirm_selector + "//*[text()='标签属性']/following-sibling::div//*[text()='长度']/following-sibling::span//*[contains(@class,'combo-arrow')]").click()
             sleep(1)
             # 选择特殊字符
-            elements = browser.find_elements_by_xpath(
-                "//*[contains(@id,'easyui_combobox_') and text()='{0}']".format(length))
-            for element in elements:
-                if element.is_displayed():
-                    element.click()
-                    break
+            panel_xpath = getPanelXpath()
+            browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(length)).click()
             sleep(1)
 
         # 点击保存属性
-        browser.find_element_by_xpath(confirm_selector + "//*[text()='保存属性']").click()
+        browser.find_element(By.XPATH, confirm_selector + "//*[text()='保存属性']").click()
 
     elif label_name == "IP":
         # IPV4
         if tag_info.__contains__("IPV4"):
             if tag_info.get("IPV4") == "否":
-                browser.find_element_by_xpath("//*[@class='my_checkbox2' and contains(text(),'IPv4')]").click()
+                browser.find_element(By.XPATH, "//*[@class='my_checkbox2' and contains(text(),'IPv4')]").click()
 
         # IPV6
         if tag_info.__contains__("IPV6"):
             if tag_info.get("IPV6") == "否":
-                browser.find_element_by_xpath("//*[@class='my_checkbox2' and contains(text(),'IPV6')]").click()
+                browser.find_element(By.XPATH, "//*[@class='my_checkbox2' and contains(text(),'IPV6')]").click()
 
         # 点击保存属性
-        browser.find_element_by_xpath(confirm_selector + "//*[text()='保存属性']").click()
+        browser.find_element(By.XPATH, confirm_selector + "//*[text()='保存属性']").click()
 
 
 def analyze_conf(begin_row=None, enable_magic=None, total_columns=None, row_split_type=None, split_tag=None, magic=None,
@@ -524,13 +499,13 @@ def analyze_conf(begin_row=None, enable_magic=None, total_columns=None, row_spli
     :return: 如果是选择正则魔方，返回false,会自动返回到上层iframe，调用方只需要手动关闭窗口或不做处理。
             如果返回true，调用方要手动跳转iframe。
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
 
     # 解析开始行
     if begin_row:
-        browser.find_element_by_xpath("//*[contains(@class,'startRow')]/following-sibling::span/input[1]").clear()
-        browser.find_element_by_xpath(
-            "//*[contains(@class,'startRow')]/following-sibling::span/input[1]").send_keys(begin_row)
+        browser.find_element(By.XPATH, "//*[contains(@class,'startRow')]/following-sibling::span/input[1]").clear()
+        browser.find_element(
+            By.XPATH, "//*[contains(@class,'startRow')]/following-sibling::span/input[1]").send_keys(begin_row)
         log.info("设置解析开始行: {}".format(begin_row))
 
     # 通过正则匹配数据列
@@ -538,7 +513,7 @@ def analyze_conf(begin_row=None, enable_magic=None, total_columns=None, row_spli
     status = browser.execute_script(js)
     log.info("【通过正则匹配数据列】勾选状态: {0}".format(status))
 
-    enable_magic_element = browser.find_element_by_xpath("//*[@class='isMagic']")
+    enable_magic_element = browser.find_element(By.XPATH, "//*[@class='isMagic']")
     browser.execute_script("arguments[0].scrollIntoView(true);", enable_magic_element)
 
     if enable_magic == "是":
@@ -556,25 +531,24 @@ def analyze_conf(begin_row=None, enable_magic=None, total_columns=None, row_spli
 
     # 列总数
     if total_columns:
-        browser.find_element_by_xpath("//*[contains(@class,'colFields')]/following-sibling::span/input[1]").clear()
-        browser.find_element_by_xpath(
-            "//*[contains(@class,'colFields')]/following-sibling::span/input[1]").send_keys(total_columns)
+        browser.find_element(By.XPATH, "//*[contains(@class,'colFields')]/following-sibling::span/input[1]").clear()
+        browser.find_element(
+            By.XPATH, "//*[contains(@class,'colFields')]/following-sibling::span/input[1]").send_keys(total_columns)
         log.info("设置列总数: {}".format(total_columns))
 
     # 拆分方式
     if row_split_type == "文本":
-        browser.find_element_by_xpath("//*[@name='rowSplitType' and @value='text']").click()
+        browser.find_element(By.XPATH, "//*[@name='rowSplitType' and @value='text']").click()
     elif row_split_type == "正则":
-        browser.find_element_by_xpath("//*[@name='rowSplitType' and @value='regexp']").click()
+        browser.find_element(By.XPATH, "//*[@name='rowSplitType' and @value='regexp']").click()
     else:
         pass
 
     # 列分隔符
     if split_tag:
-        browser.find_element_by_xpath(
-            "//*[contains(@class,'splitChar')]/following-sibling::span/input[1]").clear()
-        browser.find_element_by_xpath(
-            "//*[contains(@class,'splitChar')]/following-sibling::span/input[1]").send_keys(split_tag)
+        browser.find_element(By.XPATH, "//*[contains(@class,'splitChar')]/following-sibling::span/input[1]").clear()
+        browser.find_element(
+            By.XPATH, "//*[contains(@class,'splitChar')]/following-sibling::span/input[1]").send_keys(split_tag)
         log.info("设置列分隔符: {}".format(split_tag))
 
     # 高级配置

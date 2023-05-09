@@ -14,13 +14,13 @@ from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.core.mainPage import AiSee
 from src.main.python.core.app.AiSee.netunit.menu import choose_menu, choose_domain
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class Vendor(object):
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         AiSee().choose_menu_func(menu="网元管理")
         wait = WebDriverWait(self.browser, 120)
         wait.until(ec.frame_to_be_available_and_switch_to_it((
@@ -28,7 +28,7 @@ class Vendor(object):
         page_wait()
         sleep(1)
 
-        choose_domain(domain=get_global_var("Domain"))
+        choose_domain(domain=gbl.service.get("Domain"))
         choose_menu(menu="设备厂家")
 
         # 切到设备厂家配置页面
@@ -78,7 +78,7 @@ class Vendor(object):
         if alert.exist_alert:
             msg = alert.get_msg()
             log.info("弹出框返回: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
             return
         if need_choose:
             if select_item:
@@ -126,7 +126,7 @@ class Vendor(object):
         else:
             log.warning("保存配置失败，失败提示: {0}".format(msg))
             alert.click_ok()
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def update(self, vendor, vendor_cname, vendor_ename, model):
         """
@@ -140,7 +140,8 @@ class Vendor(object):
         alert = BeAlertBox(back_iframe=False, timeout=1)
         exist = alert.exist_alert
         if exist:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             # 切换到修改网元信息页面iframe
             wait = WebDriverWait(self.browser, 30)
@@ -160,7 +161,7 @@ class Vendor(object):
             else:
                 log.warning("保存配置失败，失败提示: {0}".format(msg))
                 alert.click_ok()
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def vendor_page(self, vendor_cname, vendor_ename, belong_vendor, model):
         """

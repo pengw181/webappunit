@@ -11,8 +11,7 @@ from src.main.python.lib.windows import WindowHandles
 from src.main.python.lib.browser import initBrowser
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
-from src.main.python.conf.loads import properties
+from src.main.python.lib.globals import gbl
 
 
 class LoginPage:
@@ -22,12 +21,11 @@ class LoginPage:
     okButton = (By.ID, "loginButton")
 
     def __init__(self):
-        chrome_driver_path = properties.get("chromeDriverPath")
-        download_path = properties.get("projectBasePath") + properties.get("projectName") + properties.get(
-            "downLoadPath")
+        chrome_driver_path = gbl.service.get("chromeDriverPath")
+        download_path = gbl.service.get("projectMainPath") + '/python/download/'
         self.browser = initBrowser(chrome_driver_path, download_path)
-        set_global_var("browser", self.browser)
-        self.page_url = get_global_var("PageUrl")
+        gbl.service.set("browser", self.browser)
+        self.page_url = gbl.service.get("PageUrl")
         self.browser.get(self.page_url)
         self.browser.maximize_window()
 
@@ -72,7 +70,7 @@ def login(username, password):
     login_action.set_password(password)
     login_action.click_ok()
     log.info("#######################欢迎登录AiSee系统#######################")
-    log.info("登录用户名：%s, 用户密码：%s" % (get_global_var("LoginUser"), get_global_var("LoginPwd")))
+    log.info("登录用户名：%s, 用户密码：%s" % (gbl.service.get("LoginUser"), gbl.service.get("LoginPwd")))
     page_wait()
     sleep(1)
     current_win_handle = WindowHandles()

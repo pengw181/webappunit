@@ -14,15 +14,15 @@ from src.main.python.core.app.VisualModeler.process.draw.processJson import Proc
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.windows import WindowHandles
 from src.main.python.lib.pageMaskWait import page_wait
+from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
-from src.main.python.conf.loads import properties
+from src.main.python.lib.globals import gbl
 
 
 class DrawProcess:
 
     def __init__(self, process_name):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.process_name = process_name
         self.current_node_count = 0
         self.last_node_name = "开始"
@@ -40,6 +40,15 @@ class DrawProcess:
             current_win_handle.switch("流程图编辑器")
         finally:
             page_wait()
+            # # 如果操作过程中，顶部保存按钮不可见，先刷新当前页面
+            # try:
+            #     save_button = self.browser.find_element(By.XPATH, "//*[contains(@class,'ico_save')]")
+            #     if save_button.is_displayed() is False:
+            #         log.info("保存按钮不可见，刷新页面")
+            #         self.browser.refresh()
+            # except NoSuchElementException:
+            #     log.info("保存按钮不存在，刷新页面")
+            #     self.browser.refresh()
             sleep(1)
 
     def get_new_location(self, is_end_node=False):
@@ -58,7 +67,7 @@ class DrawProcess:
         pnj = ProcessNodeJson(process_name=self.process_name)
         self.current_node_count = pnj.count_node()
         self.last_node_name = pnj.get_last_node_name()
-        maxNodePerLine = int(properties.get("maxNodePerLine"))
+        maxNodePerLine = int(gbl.service.get("maxNodePerLine"))
         # 去掉开始节点
         self.current_node_count -= 1
         # 计算下一个节点放在第几行，每一行最多4-6个节点
@@ -66,20 +75,24 @@ class DrawProcess:
         which_row = self.current_node_count % maxNodePerLine     # 8 % 5 = 3
         # x = 150 * (which_row + 1) + 100 * which_row
         x = 120 * (which_row + 1) + 80 * which_row
-        y = -24 + 120 * which_line
+        y = -30 + 120 * which_line
         if is_end_node:
-            # 结束节点高度只有24，普通节点高度64，折中结束节点y轴加20
-            y += 20
+            # 开始、结束节点高度只有24，普通节点高度64，折中结束节点y轴加20
+            y += 18
         log.info("下一个节点距离开始节点坐标：[%s, %s]" % (x, y))
         self.current_node_count += 1
         return start_node_element, x, y
 
-    def check_node_located(self, node_name):
+    def check_node_located(self, node_name=None):
         # 验证节点是否已加入画布中
         try:
-            self.browser.find_element(
-                By.XPATH, "//*[contains(@class, 'GooFlow_item') and contains(@title,'节点未保存')]//*[text()='{}']".format
-                (node_name))
+            if node_name == '结束节点':
+                self.browser.find_element(
+                    By.XPATH, "//*[contains(@class, 'GooFlow_item')]//*[@class='ico_end']")
+            else:
+                self.browser.find_element(
+                    By.XPATH, "//*[contains(@class, 'GooFlow_item') and contains(@title,'节点未保存')]//*[text()='{}']".format
+                    (node_name))
             # self.browser.execute_script("arguments[0].scrollIntoView(true);", new_node_element)
             log.info("节点已放置在画布中")
         except NoSuchElementException as e:
@@ -274,13 +287,16 @@ class DrawProcess:
             action.move_to_element_with_offset(start_node_element, xset, yset).click().perform()
             sleep(1)
 
-            new_node_element = self.browser.find_element(
-                By.XPATH, "//*[contains(@class, 'GooFlow_item')]//*[@class='ico_end']")
-            try:
-                self.browser.execute_script("arguments[0].scrollIntoView(true);", new_node_element)
-                log.info("节点已放置在画布中")
-            except NoSuchElementException:
-                log.error("节点加入画布异常，请查看流程图")
+            # 验证节点是否成功放入画布
+            self.check_node_located("结束节点")
+
+            # new_node_element = self.browser.find_element(
+            #     By.XPATH, "//*[contains(@class, 'GooFlow_item')]//*[@class='ico_end']")
+            # try:
+            #     self.browser.execute_script("arguments[0].scrollIntoView(true);", new_node_element)
+            #     log.info("节点已放置在画布中")
+            # except NoSuchElementException:
+            #     log.error("节点加入画布异常，请查看流程图")
 
         else:
             raise KeyError("未知节点类型")
@@ -294,23 +310,20 @@ class DrawProcess:
         page_wait()
         log.info("开始给节点连线")
 
-        try:
-            # source节点
-            source_element = self.browser.find_element(
-                By.XPATH, "//*[contains(@class, 'GooFlow_item')]//*[text()='{0}']".format(source_node_name))
+        # source节点
+        source_element = self.browser.find_element(
+            By.XPATH, "//*[contains(@class, 'GooFlow_item')]//*[text()='{0}']".format(source_node_name))
 
-            # target节点
-            target_element = self.browser.find_element(
-                By.XPATH, "//*[contains(@class, 'GooFlow_item')]//*[text()='{0}']".format(target_node_name))
+        # target节点
+        target_element = self.browser.find_element(
+            By.XPATH, "//*[contains(@class, 'GooFlow_item')]//*[text()='{0}']".format(target_node_name))
 
-            # 连线
-            self.browser.find_element(By.XPATH, "//*[@id='aisee_btn_direct']").click()
-            sleep(1)
-            # self.browser.execute_script("arguments[0].scrollIntoView(true);", source_element)
-            action.drag_and_drop(source_element, target_element).perform()
-            sleep(1)
-        except NoSuchElementException:
-            raise
+        # 连线
+        self.browser.find_element(By.XPATH, "//*[@id='aisee_btn_direct']").click()
+        sleep(1)
+        # self.browser.execute_script("arguments[0].scrollIntoView(true);", source_element)
+        action.drag_and_drop(source_element, target_element).perform()
+        sleep(1)
 
         # 设置关联关系
         pnj = ProcessNodeJson(process_name=self.process_name)
@@ -322,17 +335,17 @@ class DrawProcess:
 
         action = ActionChains(self.browser)
         action.double_click(line).perform()
-        self.browser.switch_to.frame(
-            self.browser.find_element(By.XPATH, "//iframe[contains(@src,'./node/lineNode.html?')]"))
+        wait = WebDriverWait(self.browser, 30)
+        wait.until(ec.frame_to_be_available_and_switch_to_it((By.XPATH, "//iframe[contains(@src,'./node/lineNode.html')]")))
+
         # 加个等待
         wait = WebDriverWait(self.browser, 10)
         wait.until(ec.element_to_be_clickable((By.XPATH, "//*[@name='line_relex']/preceding-sibling::span[1]/a")))
         self.browser.find_element(By.XPATH, "//*[@name='line_relex']/preceding-sibling::span[1]/a").click()
-        relex_element = self.browser.find_element(
-            By.XPATH, "//*[contains(@id,'line_relex_easyui_combobox_') and text()='{0}']".format(logic))
-        self.browser.execute_script("arguments[0].scrollIntoView(true);", relex_element)
-        relex_element.click()
-        self.browser.find_element(By.XPATH, "//*[@onclick='add_line_config_info();']//*[text()='提交']").click()
+        panel_xpath = getPanelXpath()
+        self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(logic)).click()
+        self.browser.find_element(By.XPATH, "//*[@onclick='add_line_config_info();']").click()
+        log.info("设置连线关系: {}".format(logic))
         self.browser.switch_to.default_content()
 
         if line_type == 2:
@@ -346,7 +359,9 @@ class DrawProcess:
 
     def save(self):
         # 保存流程图
-        self.browser.find_element(By.XPATH, "//*[@title='保存流程图']").click()
+        # wait = WebDriverWait(self.browser, 10)
+        # wait.until(ec.element_to_be_clickable((By.XPATH, "//*[contains(@class,'ico_save')]")))
+        self.browser.find_element(By.XPATH, "//*[contains(@class,'ico_save')]").click()
         log.info("保存流程图")
 
         alert = BeAlertBox(back_iframe=False)
@@ -355,7 +370,7 @@ class DrawProcess:
             log.info("流程保存成功")
         else:
             log.warning("流程保存失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def set_end_node(self, status):
         end_node = self.browser.find_element(By.XPATH, "//*[@class='span openwin']")
@@ -386,7 +401,7 @@ class DrawProcess:
             log.info("结束节点设置成功")
         else:
             log.warning("结束节点设置失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     @staticmethod
     def node_business_conf(node_type, node_name, **kwargs):

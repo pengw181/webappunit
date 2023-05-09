@@ -13,14 +13,14 @@ from src.main.python.lib.processVar import choose_var
 from src.main.python.lib.input import set_text_enable_var
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.core.app.VisualModeler.process.node.oprt.condition import condition
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
 class NodeControl:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         log.info("开始节点控制配置")
 
     def condition_dependence(self, enable):
@@ -256,7 +256,7 @@ class NodeControl:
             self.browser.find_element(
                 By.XPATH, "//*[contains(@onclick,'showAdd') and contains(@onclick,'times_nextCondition')]").click()
             page_wait()
-            iframe_xpath_list = [get_global_var("NodeIframe"), get_global_var("ControlIframe")]
+            iframe_xpath_list = [gbl.service.get("NodeIframe"), gbl.service.get("ControlIframe")]
             condition(array=toNextCondition, iframe_xpath_list=iframe_xpath_list)
             log.info("【跳至下一轮条件】配置完成")
             sleep(1)
@@ -270,7 +270,7 @@ class NodeControl:
             self.browser.find_element(
                 By.XPATH, "//*[contains(@onclick,'showAdd') and contains(@onclick,'times_endCondition')]").click()
             page_wait()
-            iframe_xpath_list = [get_global_var("NodeIframe"), get_global_var("ControlIframe")]
+            iframe_xpath_list = [gbl.service.get("NodeIframe"), gbl.service.get("ControlIframe")]
             condition(array=endCondition, iframe_xpath_list=iframe_xpath_list)
             log.info("【结束循环条件】配置完成")
             sleep(1)
@@ -291,7 +291,7 @@ class NodeControl:
             self.browser.find_element(
                 By.XPATH, "//*[contains(@onclick,'showAdd') and contains(@onclick,'circleCondition')]").click()
             page_wait()
-            iframe_xpath_list = [get_global_var("NodeIframe"), get_global_var("ControlIframe")]
+            iframe_xpath_list = [gbl.service.get("NodeIframe"), gbl.service.get("ControlIframe")]
             condition(array=circleCondition, iframe_xpath_list=iframe_xpath_list)
             log.info("【循环条件】配置完成")
             sleep(1)
@@ -317,7 +317,7 @@ class NodeControl:
                     element.click()
                     break
             page_wait()
-            iframe_xpath_list = [get_global_var("NodeIframe"), get_global_var("ControlIframe")]
+            iframe_xpath_list = [gbl.service.get("NodeIframe"), gbl.service.get("ControlIframe")]
             condition(array=toNextCondition, iframe_xpath_list=iframe_xpath_list)
             log.info("【跳至下一轮条件】配置完成")
             sleep(1)
@@ -343,7 +343,7 @@ class NodeControl:
                     element.click()
                     break
             page_wait()
-            iframe_xpath_list = [get_global_var("NodeIframe"), get_global_var("ControlIframe")]
+            iframe_xpath_list = [gbl.service.get("NodeIframe"), gbl.service.get("ControlIframe")]
             condition(array=endCondition, iframe_xpath_list=iframe_xpath_list)
             log.info("【结束循环条件】配置完成")
             sleep(1)
@@ -410,16 +410,16 @@ class NodeControl:
                                 # 切换到节点iframe
                                 wait = WebDriverWait(self.browser, 30)
                                 wait.until(
-                                    ec.frame_to_be_available_and_switch_to_it((By.XPATH, get_global_var("NodeIframe"))))
+                                    ec.frame_to_be_available_and_switch_to_it((By.XPATH, gbl.service.get("NodeIframe"))))
                                 # 切换到控制配置页面iframe
                                 wait = WebDriverWait(self.browser, 30)
                                 wait.until(
-                                    ec.frame_to_be_available_and_switch_to_it((By.XPATH, get_global_var("ControlIframe"))))
+                                    ec.frame_to_be_available_and_switch_to_it((By.XPATH, gbl.service.get("ControlIframe"))))
                             else:
                                 log.warn("【按列取数】删除变量失败，失败提示: {0}".format(msg))
                         else:
                             log.warn("【按列取数】删除变量失败，失败提示: {0}".format(msg))
-                        set_global_var("ResultMsg", msg, False)
+                        gbl.temp.set("ResultMsg", msg)
 
     def _col_var_page(self, varName, valueType, arrayIndex):
         """
@@ -465,13 +465,13 @@ class NodeControl:
             log.info("【按列取数】设置变量成功")
             # 切换到节点iframe
             wait = WebDriverWait(self.browser, 30)
-            wait.until(ec.frame_to_be_available_and_switch_to_it((By.XPATH, get_global_var("NodeIframe"))))
+            wait.until(ec.frame_to_be_available_and_switch_to_it((By.XPATH, gbl.service.get("NodeIframe"))))
             # 切换到控制配置页面iframe
             wait = WebDriverWait(self.browser, 30)
-            wait.until(ec.frame_to_be_available_and_switch_to_it((By.XPATH, get_global_var("ControlIframe"))))
+            wait.until(ec.frame_to_be_available_and_switch_to_it((By.XPATH, gbl.service.get("ControlIframe"))))
         else:
             log.warn("【按列取数】设置变量失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def advance_cfg(self, saveLog, recordCycleNum, outputLogPrintRuler):
         """
@@ -607,7 +607,7 @@ class NodeControl:
             self.browser.find_element(
                 By.XPATH, "//*[contains(@onclick,'showAdd') and contains(@onclick,'fitcnd')]").click()
             page_wait()
-            iframe_xpath_list = [get_global_var("NodeIframe"), get_global_var("ControlIframe")]
+            iframe_xpath_list = [gbl.service.get("NodeIframe"), gbl.service.get("ControlIframe")]
             condition(array=meetCondition, iframe_xpath_list=iframe_xpath_list)
             log.info("【满足条件】配置完成")
             sleep(1)
@@ -621,7 +621,7 @@ class NodeControl:
             self.browser.find_element(
                 By.XPATH, "//*[contains(@onclick,'showAdd') and contains(@onclick,'nofitcnd')]").click()
             page_wait()
-            iframe_xpath_list = [get_global_var("NodeIframe"), get_global_var("ControlIframe")]
+            iframe_xpath_list = [gbl.service.get("NodeIframe"), gbl.service.get("ControlIframe")]
             condition(array=unMeetCondition, iframe_xpath_list=iframe_xpath_list)
             log.info("【不满足条件】配置完成")
             sleep(1)
@@ -635,7 +635,7 @@ class NodeControl:
             self.browser.find_element(
                 By.XPATH, "//*[contains(@onclick,'showAdd') and contains(@onclick,'unsurecnd')]").click()
             page_wait()
-            iframe_xpath_list = [get_global_var("NodeIframe"), get_global_var("ControlIframe")]
+            iframe_xpath_list = [gbl.service.get("NodeIframe"), gbl.service.get("ControlIframe")]
             condition(array=unCertainCondition, iframe_xpath_list=iframe_xpath_list)
             log.info("【不确定条件】配置完成")
             sleep(1)
@@ -649,7 +649,7 @@ class NodeControl:
             self.browser.find_element(
                 By.XPATH, "//*[contains(@onclick,'showAdd') and contains(@onclick,'dynamicCnd')]").click()
             page_wait()
-            iframe_xpath_list = [get_global_var("NodeIframe"), get_global_var("ControlIframe")]
+            iframe_xpath_list = [gbl.service.get("NodeIframe"), gbl.service.get("ControlIframe")]
             condition(array=dynamicCondition, iframe_xpath_list=iframe_xpath_list)
             log.info("【动态值】配置完成")
             sleep(1)
@@ -665,4 +665,4 @@ class NodeControl:
             log.info("设置成功")
         else:
             log.warn("【设置失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)

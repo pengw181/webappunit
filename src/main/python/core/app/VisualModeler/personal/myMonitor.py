@@ -89,6 +89,14 @@ class Monitor(Dashboard):
         """
         self.delete(dashboard_name)
 
+    def clearDashboard(self, dashboard_name, fuzzy_match=False):
+        """
+        # 清空仪表盘
+        :param dashboard_name: 仪表盘名称
+        :param fuzzy_match: 模糊匹配
+        """
+        self.clear(dashboard_name, fuzzy_match)
+
     @staticmethod
     def addImage(image_info):
         """

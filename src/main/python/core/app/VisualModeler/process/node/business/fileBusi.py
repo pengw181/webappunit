@@ -13,7 +13,7 @@ from src.main.python.lib.chooseDir import choose_ftp_dir, choose_file_dir
 from src.main.python.lib.regular import RegularCube
 from src.main.python.lib.input import set_text_enable_var
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def file_business(node_name, operate_mode, storage_set, source_set, dest_set, files_set):
@@ -61,7 +61,7 @@ def file_business(node_name, operate_mode, storage_set, source_set, dest_set, fi
         }
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     sleep(2)
     log.info("开始配置文件节点业务配置")
     # 设置节点名称
@@ -128,7 +128,7 @@ def file_business(node_name, operate_mode, storage_set, source_set, dest_set, fi
         log.info("保存业务配置成功")
     else:
         log.warning("保存业务配置失败，失败提示: {0}".format(msg))
-    set_global_var("ResultMsg", msg, False)
+    gbl.temp.set("ResultMsg", msg)
 
     # 刷新页面，返回画流程图
     browser.refresh()
@@ -169,7 +169,7 @@ def file_storage_mode(storage_set, files_set):
         }
     ]
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 存储类型
     if storage_set:
         file_storage_mode_dir_set(storage_type=storage_set.get("存储类型"), use_var=storage_set.get("变量引用"),
@@ -240,7 +240,7 @@ def file_storage_mode_dir_set(storage_type, use_var, ftp, dir_name):
     :param ftp: 远程服务器
     :param dir_name: 目录
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     log.info("文件存储模式配置文件目录")
     if storage_type == "本地":
         log.info("配置本地文件")
@@ -328,7 +328,7 @@ def file_storage_mode_file_set(input_var, file_name, file_type, encoding, sepera
         "时间格式": "yyyyMMdd"
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     num = row_num
     # 聚焦元素
     row_element = browser.find_element(
@@ -458,7 +458,7 @@ def file_cp_mode(src_set, dest_set, files_set):
         }
     ]
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # ----源存储类型----
     if src_set:
         if src_set.get("变量引用") == "是":
@@ -542,7 +542,7 @@ def file_cp_mode_src_set(storage_type, use_var, ftp, dir_name):
     :param ftp: 远程服务器
     :param dir_name: 目录
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 存储类型
     if storage_type == "本地":
         log.info("配置本地文件")
@@ -606,7 +606,7 @@ def file_cp_mode_dest_set(storage_type, use_var, ftp, dir_name):
     :param ftp: 远程服务器
     :param dir_name: 目录
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 存储类型
     if storage_type == "本地":
         log.info("配置本地文件")
@@ -688,7 +688,7 @@ def file_cp_mode_file_set(choose_type, file_name, dest_file_name, mode, row_num)
         "模式": "移动"
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     num = row_num
     # 聚焦元素
     row_element = browser.find_element(By.XPATH, "//*[@name='file_choose_type{0}']/preceding-sibling::input".format(num))
@@ -732,14 +732,14 @@ def file_cp_mode_file_set(choose_type, file_name, dest_file_name, mode, row_num)
             if alert.title_contains("成功"):
                 log.info("保存正则模版成功")
                 # 切换到节点iframe
-                browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                 # 切换到业务配置iframe
                 browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[@id='busi_node']"))
                 # 切换到文件配置iframe
                 browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[@id='file_model_content']"))
             else:
                 log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-            set_global_var("resultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
         else:
             browser.switch_to.parent_frame()
 
@@ -796,7 +796,7 @@ def file_load_mode(storage_set, files_set):
     ]
 
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     log.info("开始文件加载模式配置")
     # 存储参数配置
     if storage_set:
@@ -874,7 +874,7 @@ def file_load_mode_dir_set(storage_type, dir_name, use_var, ftp):
     :param ftp: 远程服务器，storage_type选择远程时，必填
 
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 存储类型
     if storage_type == "本地":
         log.info("配置本地文件")
@@ -951,7 +951,7 @@ def file_load_mode_file_set(choose_type, file_name, file_type, encoding, begin_l
         }
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     num = row_num
     # 文件配置
     focus_element = browser.find_element(
@@ -996,14 +996,14 @@ def file_load_mode_file_set(choose_type, file_name, file_type, encoding, begin_l
             if alert.title_contains("成功"):
                 log.info("保存正则模版成功")
                 # 切换到节点iframe
-                browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                 # 切换到业务配置iframe
                 browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[@id='busi_node']"))
                 # 切换到文件配置iframe
                 browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[@id='file_model_content']"))
             else:
                 log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-            set_global_var("resultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
         else:
             # 返回上层iframe
             browser.switch_to.parent_frame()
@@ -1087,13 +1087,13 @@ def file_load_mode_file_set(choose_type, file_name, file_type, encoding, begin_l
                 if alert.title_contains("成功"):
                     log.info("保存正则模版成功")
                     # 切换到节点iframe
-                    browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                    browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                     # 切换到业务配置iframe
                     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[@id='busi_node']"))
                     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[@id='file_model_content']"))
                 else:
                     log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-                set_global_var("resultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
             sleep(1)
         else:
             if status:

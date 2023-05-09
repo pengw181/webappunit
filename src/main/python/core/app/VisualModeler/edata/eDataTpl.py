@@ -19,7 +19,7 @@ from src.main.python.core.app.VisualModeler.edata.sectionMode import SectionMode
 from src.main.python.core.app.VisualModeler.edata.dataMode import DateModeEData as DataMode
 from src.main.python.core.app.VisualModeler.edata.joinMode import JoinModeEData as JoinMode
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class EDataTemplate:
@@ -28,7 +28,7 @@ class EDataTemplate:
         """
         :param temp_type: 模版类型
         """
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.temp_type = temp_type
         DoctorWho().choose_menu("数据拼盘-模版配置")
         sleep(1)
@@ -61,10 +61,10 @@ class EDataTemplate:
         elif self.temp_type == "列更新模式":
 
             self.tab_name = "NORMAL_MODE"
+            self.tab_xpath = "//*[@id='updateMode' and @value='{0}']/following-sibling::div".format(self.tab_name)
             # 列更新模式iframe
             self.tab_iframe_xpath = "//iframe[contains(@src,'./edataModeTmpl.html?updateMode={0}')]".format(
                 self.tab_name)
-            self.tab_xpath = "//*[@id='updateMode' and @value='{0}']/following-sibling::div".format(self.tab_name)
             # 表配置页面iframe
             self.table_main_iframe_xpath = "//iframe[contains(@src,'../edata/edataTmplEditWin.html')]"
             # 表名配置页面iframe
@@ -77,10 +77,10 @@ class EDataTemplate:
         elif self.temp_type == "分段模式":
 
             self.tab_name = "SUBSECTION_MODE"
+            self.tab_xpath = "//*[@id='updateMode' and @value='{0}']/following-sibling::div".format(self.tab_name)
             # 分段模式iframe
             self.tab_iframe_xpath = "//iframe[contains(@src,'./edataModeTmpl.html?updateMode={0}')]".format(
                 self.tab_name)
-            self.tab_xpath = "//*[@id='updateMode' and @value='{0}']/following-sibling::div".format(self.tab_name)
             # 表配置页面iframe
             self.table_main_iframe_xpath = "//iframe[contains(@src,'../edata/edataTmplEditWin.html')]"
             # 表名配置页面iframe
@@ -93,10 +93,10 @@ class EDataTemplate:
         elif self.temp_type == "数据模式":
 
             self.tab_name = "DATA_MODE"
+            self.tab_xpath = "//*[@id='updateMode' and @value='{0}']/following-sibling::div".format(self.tab_name)
             # 数据模式iframe
             self.tab_iframe_xpath = "//iframe[contains(@src,'./edataModeTmpl.html?updateMode={0}')]".format(
                 self.tab_name)
-            self.tab_xpath = "//*[@id='updateMode' and @value='{0}']/following-sibling::div".format(self.tab_name)
             # 表配置页面iframe
             self.table_main_iframe_xpath = "//iframe[contains(@src,'../edata/edataTmplEditWin.html')]"
             # 表名配置页面iframe
@@ -108,10 +108,10 @@ class EDataTemplate:
         elif self.temp_type == "合并模式":
 
             self.tab_name = "JOIN_MODE"
+            self.tab_xpath = "//*[@id='updateMode' and @value='{0}']/following-sibling::div".format(self.tab_name)
             # 合并模式iframe
             self.tab_iframe_xpath = "//iframe[contains(@src,'./joinmode/joinModeTmpl.html?updateMode={0}')]".format(
                 self.tab_name)
-            self.tab_xpath = "//*[@id='updateMode' and @value='{0}']/following-sibling::div".format(self.tab_name)
             self.eData = JoinMode(self.eData_iframe_xpath, self.tab_xpath)
 
         else:
@@ -173,13 +173,13 @@ class EDataTemplate:
         if alert.exist_alert:
             msg = alert.get_msg()
             log.info("弹出框返回: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
             return
         if need_choose:
             if select_item:
                 try:
                     self.browser.find_element(
-                        By.XPATH, self.tab_xpath + "//*[@field='tableNameCh']//*[text()='{0}']".format(select_item)).click()
+                        By.XPATH, "//*[@field='tableNameCh']//*[text()='{0}']".format(select_item)).click()
                 except NoSuchElementException:
                     raise KeyError("未找到匹配数据")
                 log.info("选择: {0}".format(select_item))
@@ -237,7 +237,7 @@ class EDataTemplate:
             log.info("{0} 添加成功".format(table_name))
         else:
             log.warning("{0} 添加失败，失败提示: {1}".format(table_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def update_table(self, table, table_name, field, remark, cmd, regexp_start, regexp_end, sample):
         """
@@ -257,7 +257,8 @@ class EDataTemplate:
         # 鉴于数据权限问题，在修改/删除数据时，需要判断是否有弹出框提示无权操作
         alert = BeAlertBox(timeout=2)
         if alert.exist_alert:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             # 进入表配置页面iframe
             wait = WebDriverWait(self.browser, 30)
@@ -298,7 +299,7 @@ class EDataTemplate:
                 log.info("{0} 修改成功".format(table))
             else:
                 log.warning("{0} 修改失败，失败提示: {1}".format(table, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def set_cols(self, table_name, col_set):
         """
@@ -311,7 +312,8 @@ class EDataTemplate:
         # 鉴于数据权限问题，在修改/删除数据时，需要判断是否有弹出框提示无权操作
         alert = BeAlertBox(back_iframe=False, timeout=2)
         if alert.exist_alert:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             # 进入表配置页面iframe
             wait = WebDriverWait(self.browser, 30)
@@ -389,11 +391,11 @@ class EDataTemplate:
                             wait.until(ec.frame_to_be_available_and_switch_to_it((By.XPATH, self.col_iframe_xpath)))
                         else:
                             log.warning("{0} 删除失败，失败提示: {0}".format(col_obj, msg))
-                        set_global_var("ResultMsg", msg, False)
+                        gbl.temp.set("ResultMsg", msg)
 
                     else:
                         log.warning("{0} 删除失败，失败提示: {0}".format(col_obj, msg))
-                    set_global_var("ResultMsg", msg, False)
+                    gbl.temp.set("ResultMsg", msg)
                     return
                 else:
                     raise KeyError("操作类型 仅支持添加/修改/删除，当前值: {0}".format(opt_type))
@@ -485,7 +487,7 @@ class EDataTemplate:
                 sleep(1)
             else:
                 log.warning("保存列配置失败，失败提示: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def configure_update_rule(self, table_name, cmd, rulerX, result_bind):
         """
@@ -501,7 +503,8 @@ class EDataTemplate:
         # 鉴于数据权限问题，在修改/删除数据时，需要判断是否有弹出框提示无权操作
         alert = BeAlertBox(back_iframe=False, timeout=2)
         if alert.exist_alert:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             # 进入表配置页面iframe
             wait = WebDriverWait(self.browser, 30)
@@ -575,7 +578,7 @@ class EDataTemplate:
             alert = BeAlertBox(timeout=3)
             if alert.exist_alert:
                 msg = alert.get_msg()
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
                 return
             else:
                 # 进入对应模版类型配置页面iframe
@@ -667,7 +670,7 @@ class EDataTemplate:
                     sleep(1)
 
                 # 点击查询待分配
-                self.browser.find_element(By.XPATH, "//*[text()='查询待分配']").click()
+                self.browser.find_element(By.XPATH, "//*[contains(@class,'queryUnassigned')]").click()
                 page_wait()
 
                 unassigned_ne = self.browser.find_elements(
@@ -686,7 +689,7 @@ class EDataTemplate:
                 if alert.title_contains("您确定分配当前查询条件下左表所有网元吗", auto_click_ok=False):
                     alert.click_ok()
                     log.info("分配网元成功")
-                    set_global_var("ResultMsg", "保存成功", False)
+                    gbl.temp.set("ResultMsg", "保存成功")
                     page_wait()
 
                     # 进入对应模版类型配置页面iframe
@@ -732,7 +735,7 @@ class EDataTemplate:
         if set_status == "启用":
             if current_status:
                 log.info("{0}已启用".format(table_name))
-                set_global_var("ResultMsg", "启用模版成功", False)
+                gbl.temp.set("ResultMsg", "启用模版成功")
             else:
                 if self.temp_type == "合并模式":
                     self.browser.find_element(
@@ -747,14 +750,14 @@ class EDataTemplate:
                     alert.click_cancel()
                     sleep(1)
                     log.info("{0} 启用成功".format(table_name))
-                    set_global_var("ResultMsg", "启用模版成功", False)
+                    gbl.temp.set("ResultMsg", "启用模版成功")
 
                     # 进入对应模式配置页面iframe
                     wait = WebDriverWait(self.browser, 30)
                     wait.until(ec.frame_to_be_available_and_switch_to_it((By.XPATH, self.tab_iframe_xpath)))
                 else:
                     log.warning("{0} 启用失败，失败提示: {1}".format(table_name, msg))
-                    set_global_var("ResultMsg", msg, False)
+                    gbl.temp.set("ResultMsg", msg)
         elif set_status == "禁用":
             if current_status:
                 if self.temp_type == "合并模式":
@@ -781,10 +784,10 @@ class EDataTemplate:
                         log.warning("{0} 禁用失败，失败提示: {1}".format(table_name, msg))
                 else:
                     log.warning("{0} 禁用失败，失败提示: {1}".format(table_name, msg))
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
             else:
                 log.info("{0}未启用".format(table_name))
-                set_global_var("ResultMsg", "禁用成功", False)
+                gbl.temp.set("ResultMsg", "禁用成功")
         else:
             raise KeyError("状态只支持启用/禁用，当前值: {0}".format(set_status))
 
@@ -809,79 +812,68 @@ class EDataTemplate:
         else:
             # 无权操作
             log.warning("{0} 删除失败，失败提示: {1}".format(table_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def data_clear(self, table_name, fuzzy_match=False):
         """
-        :param obj: 数据表名称
+        :param table_name: 数据表名称
         :param fuzzy_match: 模糊匹配
         """
         log.info("开始进行数据清理")
         # 用于清除数据，在测试之前执行, 使用关键字开头模糊查询
-        self.browser.find_element(
-            By.XPATH, self.tab_xpath + "//*[@id='tableName']/following-sibling::span/input[1]").clear()
-        self.browser.find_element(
-            By.XPATH, self.tab_xpath + "//*[@id='tableName']/following-sibling::span/input[1]").send_keys(table_name)
-        # 点击查询
-        self.browser.find_element(By.XPATH, self.tab_xpath + "//*[@id='edata-query']").click()
-        page_wait()
+        self.search(query={"数据表名称": table_name}, need_choose=False)
         fuzzy_match = True if fuzzy_match == "是" else False
         if fuzzy_match:
             record_element = self.browser.find_elements(
-                By.XPATH, "//*[contains(@id,'edataTmplTab')]/*[@field='tableNameCh']//*[starts-with(text(),'{0}')]".format(
-                    table_name))
+                By.XPATH, "//*[contains(@id,'edataTmplTab')]//*[starts-with(text(),'{0}')]".format(table_name))
         else:
             record_element = self.browser.find_elements(
-                By.XPATH, "//*[contains(@id,'edataTmplTab')]/*[@field='tableNameCh']//*[text()='{0}']".format(table_name))
-        if len(record_element) > 0:
-            exist_data = True
-
-            while exist_data:
-                pe = record_element[0]
-                search_result = pe.text
-                # 启用状态不允许删除，则先禁用
-                current_status = self.get_table_status(search_result)
-                if current_status:
-                    self.update_status(search_result, "禁用", False)
-                    sleep(1)
-                else:
-                    pe.click()
-                log.info("选择: {0}".format(search_result))
-                # 删除
-                self.browser.find_element(By.XPATH, self.tab_xpath + "//*[@id='edata-del']").click()
-                alert = BeAlertBox()
-                msg = alert.get_msg()
-                if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
-                    alert.click_ok()
-                    alert = BeAlertBox(back_iframe=False)
-                    msg = alert.get_msg()
-                    if alert.title_contains("删除成功"):
-                        log.info("{0} 删除成功".format(search_result))
-                        page_wait()
-
-                        # 进入对应模式配置页面iframe
-                        wait = WebDriverWait(self.browser, 30)
-                        wait.until(ec.frame_to_be_available_and_switch_to_it((By.XPATH, self.tab_iframe_xpath)))
-                        if fuzzy_match:
-                            # 重新获取页面查询结果
-                            record_element = self.browser.find_elements(
-                                By.XPATH, "//*[contains(@id,'edataTmplTab')]/*[@field='tableNameCh']//*[starts-with(text(),'{0}')]".format(
-                                    table_name))
-                            if len(record_element) > 0:
-                                exist_data = True
-                            else:
-                                # 查询结果为空,修改exist_data为False，退出循环
-                                log.info("数据清理完成")
-                                exist_data = False
-                        else:
-                            break
-                    else:
-                        raise Exception("删除数据时出现未知异常: {0}".format(msg))
-                else:
-                    # 无权操作
-                    log.warning("{0} 清理失败，失败提示: {1}".format(table_name, msg))
-                    set_global_var("ResultMsg", msg, False)
-                    break
-        else:
+                By.XPATH, "//*[contains(@id,'edataTmplTab')]//*[text()='{0}']".format(table_name))
+        if len(record_element) == 0:
             # 查询结果为空,结束处理
             log.info("查询不到满足条件的数据，无需清理")
+            return
+
+        exist_data = True
+        while exist_data:
+            pe = record_element[0]
+            search_result = pe.text
+            # 启用状态不允许删除，则先禁用
+            if self.get_table_status(search_result):
+                self.update_status(search_result, "禁用", False)
+                sleep(1)
+            else:
+                pe.click()
+            log.info("选择: {0}".format(search_result))
+            # 删除
+            self.browser.find_element(By.XPATH, self.tab_xpath + "//*[@id='edata-del']").click()
+            alert = BeAlertBox()
+            msg = alert.get_msg()
+            if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
+                alert.click_ok()
+                alert = BeAlertBox(back_iframe=False)
+                msg = alert.get_msg()
+                if alert.title_contains("删除成功"):
+                    log.info("{0} 删除成功".format(search_result))
+                    page_wait()
+
+                    # 进入对应模式配置页面iframe
+                    wait = WebDriverWait(self.browser, 30)
+                    wait.until(ec.frame_to_be_available_and_switch_to_it((By.XPATH, self.tab_iframe_xpath)))
+                    if fuzzy_match:
+                        # 重新获取页面查询结果
+                        record_element = self.browser.find_elements(
+                            By.XPATH, "//*[contains(@id,'edataTmplTab')]//*[starts-with(text(),'{0}')]".format(table_name))
+                        if len(record_element) == 0:
+                            # 查询结果为空,修改exist_data为False，退出循环
+                            log.info("数据清理完成")
+                            exist_data = False
+                    else:
+                        break
+                else:
+                    raise Exception("删除数据时出现未知异常: {0}".format(msg))
+            else:
+                # 无权操作
+                log.warning("{0} 清理失败，失败提示: {1}".format(table_name, msg))
+                gbl.temp.set("ResultMsg", msg)
+                break

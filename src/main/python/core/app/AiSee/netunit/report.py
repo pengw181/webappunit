@@ -12,13 +12,13 @@ from src.main.python.core.app.AiSee.netunit.menu import choose_menu
 from src.main.python.lib.dateUtil import set_calendar
 from src.main.python.lib.tableData import get_table_data
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class ConnectTestReport(object):
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         choose_menu(menu="连通测试报告")
 
         # 切到连通测试报告页面

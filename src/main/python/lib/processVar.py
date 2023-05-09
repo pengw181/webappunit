@@ -10,7 +10,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def choose_var(var_name, var_type=None):
@@ -20,7 +20,7 @@ def choose_var(var_name, var_type=None):
     :param var_type: 变量类型，节点定义变量、流程定义变量，默认为空
 
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     page_wait()
     # 切换iframe
     wait = WebDriverWait(browser, 30)
@@ -95,7 +95,7 @@ def choose_inner_var(var_name, time_format, time_interval, time_unit, language):
         "语言": "中文"
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 切换iframe
     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[contains(@src,'varList2.html?')]"))
 
@@ -187,7 +187,7 @@ def var_list_panel(var_type, var_name):
     :param var_name: 变量名
     :return: 双击变量，加入到左侧输入框，执行完之后，返回上层iframe，panel是在里层iframe
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 切换iframe
     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[contains(@src,'varListPanel.html?')]"))
     # 点击变量分类tab

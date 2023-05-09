@@ -12,14 +12,15 @@ from src.main.python.lib.upload import upload
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.core.app.VisualModeler.doctorWho import DoctorWho
+from src.main.python.db.SQLHelper import SQLUtil
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class File:
 
     def __init__(self, catalog):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.catalog = catalog
         self.root_flag = False
         dw = DoctorWho()
@@ -39,8 +40,14 @@ class File:
         sleep(1)
 
         # 获取系统目录
-        system_catalog_path = get_global_var("SystemCatalogPath")
-        system_catalog_path = system_catalog_path.split("/")
+        sql_util = SQLUtil(db=gbl.service.get("environment"), schema="main")
+        sql = """ SELECT A.CATALOG_PATH AS catalogPath FROM TN_CATALOG_DEF A
+                    WHERE A.CATALOG_TYPE = '1'
+                    AND A.BELONG_ID = '{0}' AND A.DOMAIN_ID = '{1}'""".format(
+            gbl.service.get("BelongID"), gbl.service.get("DomainID"))
+        system_path = sql_util.select(sql)
+        gbl.service.set('SystemCatalogPath', system_path)
+        system_catalog_path = system_path.split("/")
         self.system_catalog_path = system_catalog_path[-1]
         log.info(self.system_catalog_path)
 
@@ -51,7 +58,7 @@ class File:
         """
         if self.catalog == "personal" and dir_name == "personal":
             # 父目录是根目录
-            dir_name = get_global_var("LoginUser")
+            dir_name = gbl.service.get("LoginUser")
         if dir_name == "system":
             dir_name = self.system_catalog_path
         dir_elements = self.browser.find_elements(By.XPATH, "//*[@class='tree-title' and text()='{0}']".format(dir_name))
@@ -106,7 +113,7 @@ class File:
 
         if parent_dir == "personal":
             # 父目录是根目录
-            parent_dir = get_global_var("LoginUser")
+            parent_dir = gbl.service.get("LoginUser")
         cur_parent = self.browser.find_element(By.XPATH, "//*[@name='parentPath']").get_attribute("value")
         if parent_dir == "system":
             parent_dir = self.system_catalog_path
@@ -123,7 +130,7 @@ class File:
                 log.info("目录 {0} 添加成功".format(dir_name))
             else:
                 log.warning("目录 {0} 添加失败，失败提示: {1}".format(dir_name, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def update_dir(self, target_dir, new_dir):
         """
@@ -160,7 +167,7 @@ class File:
                 log.info("目录 {0} 修改成功".format(target_dir))
             else:
                 log.warning("目录 {0} 修改失败，失败提示: {1}".format(target_dir, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
         except TimeoutError:
             raise Exception("选择目录错误")
 
@@ -191,7 +198,7 @@ class File:
                         log.warning("目录{0} 删除失败，失败提示: {1}".format(dir_name, msg))
                 else:
                     log.warning("目录{0} 删除失败，失败提示: {1}".format(dir_name, msg))
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
         return dir_exist
 
     def upload_file(self, dir_name, catalog, file_name):
@@ -221,15 +228,16 @@ class File:
             # 获取文件列表第一个文件的文件名，与上传文件名比较，判断是否上传正确
             sleep(1)
             files = self.browser.find_elements(
-                By.XPATH, "//*[@value='{0}']/..//*[contains(@id,'catalogDef_info_tab_')][1]/*[@field='fileName']/div".format(self.catalog))
+                By.XPATH, "//*[@value='{0}']/..//*[contains(@id,'catalogDef_info_tab_')][1]/*[@field='fileName']/div".format(
+                    self.catalog))
             for f in files:
                 if f.is_displayed():
-                    set_global_var("CheckFileName", f.text, False)
-                    log.info("当前目录【{0}】下，第一个文件名: {1}".format(dir_name, get_global_var("CheckFileName")))
+                    gbl.temp.set("CheckFileName", f.text)
+                    log.info("当前目录【{0}】下，第一个文件名: {1}".format(dir_name, gbl.temp.get("CheckFileName")))
                     break
         else:
             log.warning("目录【{0}】上传文件 {1} 失败，失败提示: {2}".format(dir_name, file_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def choose_file(self, dir_name, file_name):
         """
@@ -312,7 +320,7 @@ class File:
                 log.warning("目录【{0}】删除文件: {1} 失败，返回结果: {2}".format(dir_name, file_name, msg))
         else:
             log.warning("目录【{0}】删除文件: {1} 失败，返回结果: {2}".format(dir_name, file_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def delete_file_batch(self, dir_name, file_names):
         """
@@ -350,7 +358,7 @@ class File:
                 log.warning("目录【{0}】删除文件: {1} 失败，返回结果: {2}".format(dir_name, ",".join(file_names), msg))
         else:
             log.warning("目录【{0}】删除文件: {1} 失败，返回结果: {2}".format(dir_name, ",".join(file_names), msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def data_clear(self, obj):
         """
@@ -358,13 +366,14 @@ class File:
         """
         # 用于清除数据，在测试之前执行, 使用关键字开头模糊查询
         dir_elements = self.browser.find_elements(By.XPATH, "//*[@class='tree-title' and text()='{0}']".format(obj))
-        if len(dir_elements) > 0:
-            for element in dir_elements:
-                if element.is_displayed():
-                    self.browser.execute_script("arguments[0].scrollIntoView(true);", element)
-                    element.click()
-                    log.info("已选择目录: {0}".format(obj))
-                    self.delete_dir(obj)
-                    break
-        else:
+        if len(dir_elements) == 0:
             log.info("指定目录 {0} 不存在，无需清理".format(obj))
+            return
+
+        for element in dir_elements:
+            if element.is_displayed():
+                self.browser.execute_script("arguments[0].scrollIntoView(true);", element)
+                element.click()
+                log.info("已选择目录: {0}".format(obj))
+                self.delete_dir(obj)
+                break

@@ -10,7 +10,7 @@ from selenium.webdriver import ActionChains
 from src.main.python.lib.toast import Toast
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.wrap import Wrap
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
@@ -18,7 +18,7 @@ from src.main.python.lib.logger import log
 class CustomizeInterface:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         page_wait(5)
         wait = WebDriverWait(self.browser, 10)
         wait.until(ec.element_to_be_clickable((By.XPATH, "//*[text()='自定义数据接口']")))
@@ -91,7 +91,7 @@ class CustomizeInterface:
             msg = toast.get_msg()
             if toast.msg_contains("保存成功"):
                 log.info("【{0}】字段转化保存成功".format(colName))
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
                 toast.waitUntil()
             else:
                 log.error("【{0}】字段转化保存失败，失败原因: {1}".format(colName, msg))
@@ -156,4 +156,4 @@ class CustomizeInterface:
             log.info("字段分类保存成功")
         else:
             log.error("字段分类保存失败，失败原因: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)

@@ -2,11 +2,12 @@
 # @Author: peng wei
 # @Time: 2021/7/20 下午9:17
 
+import re
 from datetime import datetime
 from selenium.webdriver.common.by import By
 from selenium.webdriver import ActionChains
 from selenium.common.exceptions import NoSuchElementException
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def set_calendar(date_s, date_format="%Y-%m-%d"):
@@ -15,7 +16,7 @@ def set_calendar(date_s, date_format="%Y-%m-%d"):
     :param date_s: 字符串，2020-11-15
     :param date_format: 时间格式%Y-%m-%d %H:%M:%S
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 解析date_s
     if date_s == "now":
         # 现在
@@ -116,7 +117,7 @@ def set_laydate(date_s, date_format="%Y-%m-%d"):
     :param date_s: 字符串，2020-11-15
     :param date_format: 时间格式%Y-%m-%d %H:%M:%S
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 解析date_s
     if date_s == "now":
         # 现在

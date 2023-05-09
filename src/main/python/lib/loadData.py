@@ -3,13 +3,11 @@
 # @Time: 2021/11/8 下午3:33
 
 from src.main.python.lib.logger import log
-from src.main.python.conf.loads import properties
+from src.main.python.lib.globals import gbl
 
 
 def load_sample(sample_file_name):
-    if not properties.get("projectBasePath").endswith("/"):
-        properties["projectBasePath"] += "/"
-    file_path = properties.get("projectBasePath") + properties.get("projectName") + "/resources/sample_data/" + sample_file_name
+    file_path = gbl.service.get("projectMainPath") + '/resources/sample_data/' + sample_file_name
     log.info("从{}加载sample数据".format(file_path))
     content = []
     with open(file_path, 'r') as f:

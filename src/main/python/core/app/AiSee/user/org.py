@@ -11,14 +11,14 @@ from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.treeNode import TreeNode
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
 class Organization:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         AiSee().choose_menu_func(menu="用户管理")
         wait = WebDriverWait(self.browser, 30)
         wait.until(ec.frame_to_be_available_and_switch_to_it((
@@ -69,7 +69,7 @@ class Organization:
             log.info("添加组织 {0} 成功".format(org_name))
         else:
             log.warning("添加组织 {0} 失败，失败原因: {1}".format(org_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def updateOrg(self, node_name, org_name, parent_org_name=None):
         """
@@ -112,7 +112,7 @@ class Organization:
             log.info("修改组织 {0} 成功".format(org_name))
         else:
             log.warning("修改组织 {0} 失败，失败原因: {1}".format(org_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def deleteOrg(self, node_name):
         """
@@ -134,7 +134,7 @@ class Organization:
                         log.info("删除组织 {0} 成功".format(node_name))
                     else:
                         log.warning("删除组织 {0} 失败，失败原因: {1}".format(node_name, msg))
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
                 break
 
     def clearOrg(self, node_name):
@@ -163,5 +163,5 @@ class Organization:
                         log.info("删除组织 {0} 成功".format(node_name))
                     else:
                         log.warning("删除组织 {0} 失败，失败原因: {1}".format(node_name, msg))
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
                 break

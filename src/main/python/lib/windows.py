@@ -3,15 +3,15 @@
 # @Time: 2021/7/20 上午11:55
 
 from selenium.common.exceptions import NoSuchWindowException
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
 class WindowHandles:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
-        self.win_handles = get_global_var("WinHandles")
+        self.browser = gbl.service.get("browser")
+        self.win_handles = gbl.service.get("WinHandles")
         if self.win_handles is None:
             self.win_handles = {}
         # log.info("当前保存窗口信息:{0}".format(self.win_handles))
@@ -23,7 +23,7 @@ class WindowHandles:
         # 如果当前打开的窗口只有1个，首次保存
         if len(self.browser.window_handles) == 1:
             self.win_handles[title] = self.browser.window_handles[0]
-            set_global_var("WinHandles", self.win_handles)
+            gbl.service.set("WinHandles", self.win_handles)
             log.info("保存首个窗口句柄 %s:%s" % (title, self.browser.window_handles[0]))
         else:
             for handle in self.browser.window_handles:
@@ -33,9 +33,9 @@ class WindowHandles:
                 # 如果当前窗口未保存在WinHandles中，则保存
                 if current_win != handle and handle not in list(self.win_handles.values()):
                     self.win_handles[title] = handle
-                    set_global_var("WinHandles", self.win_handles)
+                    gbl.service.set("WinHandles", self.win_handles)
                     log.info("保存新的窗口句柄 %s:%s" % (title, handle))
-        log.info("当前窗口信息:{0}".format(get_global_var("WinHandles")))
+        log.info("当前窗口信息:{0}".format(gbl.service.get("WinHandles")))
 
     def switch(self, title):
         window = self.win_handles.get(title)
@@ -53,10 +53,10 @@ class WindowHandles:
             self.browser.switch_to.window(str(self.win_handles.get(title)))
             self.browser.close()
             self.win_handles.pop(title)
-            set_global_var("WinHandles", self.win_handles)
+            gbl.service.set("WinHandles", self.win_handles)
             self.browser.switch_to.window(self.browser.window_handles[-1])
             log.info("窗口【{0}】已关闭.".format(title))
-            log.info(get_global_var("WinHandles"))
+            log.info(gbl.service.get("WinHandles"))
             self.browser.refresh()
         else:
             log.debug("窗口【{0}】不存在，无需关闭.".format(title))

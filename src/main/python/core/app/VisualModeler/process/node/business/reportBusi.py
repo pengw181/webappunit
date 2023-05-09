@@ -13,7 +13,7 @@ from src.main.python.lib.input import set_textarea
 from src.main.python.lib.loadData import load_sample
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def report_business(node_name, opt_type, obj_var, var_name, var_map, interface_name, remark, sample_data):
@@ -89,7 +89,7 @@ def report_business(node_name, opt_type, obj_var, var_name, var_map, interface_n
         }
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     sleep(1)
     # 设置节点名称
     if node_name:
@@ -100,7 +100,7 @@ def report_business(node_name, opt_type, obj_var, var_name, var_map, interface_n
     # 操作方式
     if opt_type == "添加":
         # 点击添加按钮
-        browser.find_element(By.XPATH, "//*[@onclick='toVarCfg()']//*[text()='添加']").click()
+        browser.find_element(By.XPATH, "//*[@onclick='toVarCfg()']").click()
         # 切换到变量配置页面
         page_wait()
         wait = WebDriverWait(browser, 30)
@@ -127,7 +127,7 @@ def report_business(node_name, opt_type, obj_var, var_name, var_map, interface_n
         if obj_var:
             browser.find_element(By.XPATH, "//*[contains(@id,'tableVarCfg')]//*[text()='{0}']".format(obj_var)).click()
             # 点击删除按钮
-            browser.find_element(By.XPATH, "//*[@onclick='delVarCfg()']//*[text()='删除']").click()
+            browser.find_element(By.XPATH, "//*[@onclick='delVarCfg()']").click()
             alert = BeAlertBox()
             msg = alert.get_msg()
             if alert.title_contains("您确定需要删除{0}吗".format(obj_var), auto_click_ok=False):
@@ -142,7 +142,7 @@ def report_business(node_name, opt_type, obj_var, var_name, var_map, interface_n
             else:
                 # 操作异常
                 log.warning("{0} 删除失败，失败提示: {1}".format(obj_var, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
             return
         else:
             raise KeyError("删除变量时，未指定变量名")
@@ -254,7 +254,7 @@ def report_business(node_name, opt_type, obj_var, var_name, var_map, interface_n
         log.info("设置样例数据")
 
     # 保存节点变量配置
-    browser.find_element(By.XPATH, "//*[@onclick='saveNodeVarRel();']//*[text()='保存']").click()
+    browser.find_element(By.XPATH, "//*[@onclick='saveNodeVarRel();']").click()
     alert = BeAlertBox(back_iframe="default")
     msg = alert.get_msg()
     if alert.title_contains("保存成功"):
@@ -265,13 +265,13 @@ def report_business(node_name, opt_type, obj_var, var_name, var_map, interface_n
             By.XPATH, "//iframe[contains(@src,'./node/reportNode.html')]")))
     else:
         log.warning("保存节点变量配置失败，失败提示: {0}".format(msg))
-    set_global_var("resultMsg", msg, False)
+    gbl.temp.set("ResultMsg", msg)
 
     # 获取节点名称
     node_name = browser.find_element(By.XPATH, "//*[@name='node_name']/preceding-sibling::input[1]").get_attribute("value")
 
     # 保存业务配置
-    browser.find_element(By.XPATH, "//*[@id='save_node_info']//*[text()='保存']").click()
+    browser.find_element(By.XPATH, "//*[@id='save_node_info']").click()
     log.info("保存业务配置")
 
     alert = BeAlertBox(back_iframe="default")
@@ -280,7 +280,7 @@ def report_business(node_name, opt_type, obj_var, var_name, var_map, interface_n
         log.info("保存业务配置成功")
     else:
         log.warning("保存业务配置失败，失败提示: {0}".format(msg))
-    set_global_var("ResultMsg", msg, False)
+    gbl.temp.set("ResultMsg", msg)
 
     # 刷新页面，返回画流程图
     browser.refresh()

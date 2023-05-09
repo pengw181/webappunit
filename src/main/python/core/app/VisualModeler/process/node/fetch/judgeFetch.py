@@ -8,7 +8,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def judge_fetch(**kwargs):
@@ -41,7 +41,7 @@ def judge_fetch(**kwargs):
     }
 
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     if not kwargs.__contains__("操作"):
         raise AttributeError("未指明操作类型")
 
@@ -102,7 +102,7 @@ def judge_fetch(**kwargs):
             log.info("保存取数配置成功")
         else:
             log.warning("保存取数配置失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     elif opt == "修改":
         obj = kwargs.get("目标变量")
@@ -161,7 +161,7 @@ def judge_fetch(**kwargs):
             log.info("保存取数配置成功")
         else:
             log.warning("保存取数配置失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     else:
         obj = kwargs.get("目标变量")
@@ -181,9 +181,9 @@ def judge_fetch(**kwargs):
                 log.warning("删除取数配置失败，失败提示: {0}".format(msg))
         else:
             log.warning("删除取数配置失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     # 切换到节点iframe
-    browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+    browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
     # 切换到取数配置iframe
     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[@id='getdata_edata_custom_node']"))

@@ -5,7 +5,7 @@
 from time import sleep
 from selenium.webdriver.common.by import By
 from src.main.python.lib.alertBox import BeAlertBox
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
@@ -27,7 +27,7 @@ def common_business(node_name, scene):
         }
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 设置节点名称
     if node_name:
         browser.find_element(By.XPATH, "//*[@name='node_name']/preceding-sibling::input[1]").clear()
@@ -54,7 +54,7 @@ def common_business(node_name, scene):
         log.info("保存业务配置成功")
     else:
         log.warning("保存业务配置失败，失败提示: {0}".format(msg))
-    set_global_var("ResultMsg", msg, False)
+    gbl.temp.set("ResultMsg", msg)
 
     # 刷新页面，返回画流程图
     browser.refresh()

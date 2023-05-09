@@ -13,6 +13,10 @@ def initBrowser(chrome_driver_path, download_path=None):
     options = webdriver.ChromeOptions()
     prefs = {'profile.default_content_settings.popups': 0, 'download.default_directory': download_path}
     options.add_experimental_option('prefs', prefs)
+    options.add_experimental_option('useAutomationExtension', False)
+    options.add_experimental_option('excludeSwitches', ['enable-automation'])
+    options.add_argument('disable-infobars')    # 不弹出chrome正在受到自动测试软件的控制
+    # options.add_argument('headless')        # 后台运行
     chrome_server = Service(chrome_driver_path)
     browser = webdriver.Chrome(service=chrome_server, options=options)
     browser.command_executor._commands["send_command"] = ("POST", '/session/$sessionId/chromium/send_command')

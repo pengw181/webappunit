@@ -10,13 +10,13 @@ from selenium.webdriver.support import expected_conditions as ec
 from src.main.python.static.aisee_menu import *
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class AiSee:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
 
     def close_tips(self):
         """

@@ -6,7 +6,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from src.main.python.static.visualmodeler_menu import tab_xpath as visual_tab
 from src.main.python.static.crawler_menu import tab_xpath as crawler_tab
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
@@ -16,7 +16,7 @@ def get_tab_xpath(tab):
     :param tab: 标签名
     :return: xpath or None
     """
-    application = get_global_var("Application")
+    application = gbl.service.get("application")
     if application == "VisualModeler":
         tab_xpath = visual_tab
     elif application == "Crawler":
@@ -32,9 +32,9 @@ def get_tab_xpath(tab):
 class TabHandles:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
 
-        self.table_handles = get_global_var("TableHandles")
+        self.table_handles = gbl.service.get("TableHandles")
         if self.table_handles is None:
             self.table_handles = {}
 
@@ -42,9 +42,9 @@ class TabHandles:
 
         if title not in self.table_handles.keys():
             self.table_handles[title] = get_tab_xpath(title)
-            set_global_var("TableHandles", self.table_handles)
+            gbl.service.set("TableHandles", self.table_handles)
             log.info("tab列表增加: %s" % title)
-        log.info("当前tab句柄信息: {0}".format(get_global_var("TableHandles")))
+        log.info("当前tab句柄信息: {0}".format(gbl.service.get("TableHandles")))
 
     def switch(self, title):
         try:

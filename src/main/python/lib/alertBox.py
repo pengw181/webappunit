@@ -8,7 +8,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import TimeoutException
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class BeAlertBox:
@@ -18,7 +18,7 @@ class BeAlertBox:
         :param back_iframe: 返回iframe
         :param timeout: 超时时间，秒
         """
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.exist_alert = False
         # 弹出框在编辑框的上一层iframe，需要用switch_to.parent_frame()返回上一层iframe
         # 弹出框在最外层，需要使用switch_to.default_content()

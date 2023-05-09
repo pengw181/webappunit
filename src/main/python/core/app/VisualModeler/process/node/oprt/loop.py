@@ -11,7 +11,7 @@ from src.main.python.lib.processVar import choose_var
 from src.main.python.lib.input import set_text_enable_var
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def var_loop(mode, var_name, loop_var_name, value_type, var_type="指令输出变量"):
@@ -24,7 +24,7 @@ def var_loop(mode, var_name, loop_var_name, value_type, var_type="指令输出�
 
     # 按变量列表循环
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 选择模式
     if mode:
         if mode == "自定义模式":
@@ -89,7 +89,7 @@ def times_loop(loop_times, loop_var_name, value_type, next_condition, end_condit
 
     # 按次数循环
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 循环次数
     if loop_times:
         input_xpath = "//*[@id='cir_times']/following-sibling::span/input[1]"
@@ -160,7 +160,7 @@ def condition_loop(cir_condition, next_condition, end_condition, common_tree, if
 
     # 按条件循环
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 循环条件
     if cir_condition:
         if common_tree:
@@ -197,7 +197,7 @@ def step_loop(step_name, cir_var_name, value_type):
 
     # 按步骤循环
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 步骤选择
     if step_name:
         browser.find_element(By.XPATH, "//*[@id='chooseStepName']/following-sibling::span//a").click()

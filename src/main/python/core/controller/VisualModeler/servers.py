@@ -107,6 +107,18 @@ def actions(func, param):
         action = ManualExecute(process_name=param.get("流程名称"))
         action.fast_run(params=param.get("参数列表"))
 
+    elif func == "UpdateProcessStatus":
+        action = Process()
+        action.set_status(process_name=param.get("流程名称"), process_status=param.get("状态"))
+
+    elif func == "ProcessApproval":
+        action = Process()
+        action.approval(process_name=param.get("流程名称"))
+
+    elif func == "CreateProcessTask":
+        action = Process()
+        action.create_task(process_name=param.get("流程名称"), task_info=param.get("任务配置"))
+
     # 报表节点仪表盘配置
     elif func == "AccessReportDashboard":
         action = ReportDashboard()
@@ -226,9 +238,9 @@ def actions(func, param):
         action = ZgDataManage(temp_type=param.get("模版类型"), zg_temp_name=param.get("模版名称"))
         action.download_templ()
 
-    elif func == "ZgDownloadData":
-        action = ZgDataManage(temp_type=param.get("模版类型"), zg_temp_name=param.get("表名"))
-        action.download()
+    elif func == "ZgExportData":
+        action = ZgDataManage(temp_type=param.get("模版类型"), zg_temp_name=param.get("模版名称"))
+        action.export()
 
     elif func == "ZgClearData":
         action = ZgDataManage(temp_type=param.get("模版类型"), zg_temp_name=param.get("模版名称"))
@@ -485,7 +497,7 @@ def actions(func, param):
     elif func == "UpdateFTP":
         action = FTP()
         update_map = param.get("修改内容")
-        action.update(server=param.get("服务器名称"), server_name=update_map.get("服务器名称"), ip=update_map.get("服务器IP"),
+        action.update(ftp=param.get("服务器名称"), server_name=update_map.get("服务器名称"), ip=update_map.get("服务器IP"),
                       port=update_map.get("服务器端口"), username=update_map.get("用户名"), pwd=update_map.get("密码"),
                       server_type=update_map.get("服务器类型"), encoding=update_map.get("服务器编码"),
                       data_type=update_map.get("数据类型"))
@@ -626,11 +638,11 @@ def actions(func, param):
 
     elif func == "UpdateCmdSetStatus":
         action = CmdSet()
-        action.update_status(cmd_info=param.get("指令信息"), status=param.get("状态"))
+        action.update_status(query=param.get("查询条件"), status=param.get("状态"))
 
     elif func == "DeleteCmdSet":
         action = CmdSet()
-        action.delete(cmd_info=param.get("指令信息"))
+        action.delete(query=param.get("查询条件"))
 
     elif func == "CmdSetDataClear":
         action = CmdSet()
@@ -757,20 +769,20 @@ def actions(func, param):
 
     elif func == "AddDashboard":
         action = Monitor()
-        action.add(dashboard_info=param.get("仪表盘配置"))
+        action.addDashboard(dashboard_info=param.get("仪表盘配置"))
 
     elif func == "EditDashboard":
         action = Monitor()
         update_map = param.get("修改内容")
-        action.edit(dashboard_name=param.get("仪表盘名称"), dashboard_info=update_map.get("仪表盘配置"))
+        action.editDashboard(dashboard_name=param.get("仪表盘名称"), dashboard_info=update_map.get("仪表盘配置"))
 
     elif func == "DeleteDashboard":
         action = Monitor()
-        action.delete(dashboard_name=param.get("仪表盘名称"))
+        action.deleteDashboard(dashboard_name=param.get("仪表盘名称"))
 
     elif func == "ClearDashboard":
         action = Monitor()
-        action.clear(dashboard_name=param.get("仪表盘名称"), fuzzy_match=param.get("模糊匹配"))
+        action.clearDashboard(dashboard_name=param.get("仪表盘名称"), fuzzy_match=param.get("模糊匹配"))
 
     elif func == "AddImage":
         action = Monitor()
@@ -840,7 +852,7 @@ def actions(func, param):
 
     elif func == "TaskDataClear":
         action = TaskManage()
-        action.data_clear(task_name=param.get("任务名称"), fuzzy_match=param.get("模糊匹配"))
+        action.data_clear(query=param.get("查询条件"), fuzzy_match=param.get("模糊匹配"))
 
     else:
         log.error("无效的动作函数")
@@ -851,12 +863,39 @@ def actions(func, param):
 
 """ 
     {
-        "操作": "ZgDeleteData",
+        "操作": "ProcessApproval",
         "参数": {
-            "模版类型": "网元基础信息",
-            "模版名称": "auto_网元基础信息表",
-            "查询条件": {
-                "网元名称": "auto_test_002"
+            "流程名称": ""
+        }
+    }
+
+
+    {
+        "操作": "CreateProcessTask",
+        "参数": {
+            "流程名称": "网元基础信息",
+            "任务配置": {
+                "任务名称": "auto_指令任务_date",
+                "配置定时任务": "关闭"
+            }
+        }   
+    }
+    
+    {
+        "操作": "CreateProcessTask",
+        "参数": {
+            "流程名称": "网元基础信息",
+            "任务配置": {
+                "任务名称": "auto_指令任务_date",
+                "配置定时任务": "开启",
+                "定时配置": {
+                    "首次执行时间": "now",
+                    "高级模式": "关闭",
+                    "间隔周期": "1",
+                    "间隔周期单位": "天"
+                
+                },
+                "任务说明": "auto_指令任务_date"
             }
         }   
     }

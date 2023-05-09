@@ -2,6 +2,7 @@
 # @Author: peng wei
 # @Time: 2021/7/20 下午6:12
 
+import re
 import json
 from time import sleep
 from selenium.common.exceptions import NoSuchElementException
@@ -18,7 +19,7 @@ from src.main.python.lib.regular import RegularCube
 from src.main.python.lib.pagination import Pagination
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.updateData import update_dict
 
 
@@ -129,7 +130,7 @@ def crawler_business(node_name, system_name, element_config, tree_set, advance_s
     }
 
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     page_wait()
     wait = WebDriverWait(browser, 30)
     wait.until(ec.element_to_be_clickable((By.XPATH, "//*[@name='node_name']/preceding-sibling::input[1]")))
@@ -153,7 +154,7 @@ def crawler_business(node_name, system_name, element_config, tree_set, advance_s
         sleep(1)
 
         # 选择目标系统后，需要先保存业务配置
-        browser.find_element(By.XPATH, "//*[@onclick='saveFetchContent(true)']//*[text()='保存']").click()
+        browser.find_element(By.XPATH, "//*[@onclick='saveFetchContent(true)']").click()
         log.info("保存业务配置")
 
         alert = BeAlertBox(back_iframe="default")
@@ -162,7 +163,7 @@ def crawler_business(node_name, system_name, element_config, tree_set, advance_s
             log.info("保存业务配置成功")
         else:
             log.warning("保存业务配置失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
         # 切换到节点iframe
         browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[contains(@src,'./node/crawlerNode.html?')]"))
@@ -245,12 +246,8 @@ def crawler_business(node_name, system_name, element_config, tree_set, advance_s
         By.XPATH, "//*[@name='node_name']/preceding-sibling::input[1]").get_attribute("value")
 
     # 保存业务配置
-    save_elements = browser.find_elements(By.XPATH, "//*[@onclick='saveFetchContent(true)']//*[text()='保存']")
-    for element in save_elements:
-        if element.is_displayed():
-            element.click()
-            log.info("保存业务配置")
-            break
+    browser.find_element(By.XPATH, "//*[@onclick='saveFetchContent(true)']").click()
+    log.info("保存业务配置")
 
     alert = BeAlertBox(back_iframe="default")
     msg = alert.get_msg()
@@ -258,7 +255,7 @@ def crawler_business(node_name, system_name, element_config, tree_set, advance_s
         log.info("保存业务配置成功")
     else:
         log.warning("保存业务配置失败，失败提示: {0}".format(msg))
-    set_global_var("ResultMsg", msg, False)
+    gbl.temp.set("ResultMsg", msg)
 
     # 刷新页面，返回画流程图
     browser.refresh()
@@ -321,7 +318,7 @@ def element_list(actionType, element):
     :param actionType: 操作类型，添加/修改/删除/复制
     :param element: 元素信息，字典
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 跳转iframe操作元素添加、修改、删除、复制按钮
     wait = WebDriverWait(browser, 30)
     wait.until(ec.frame_to_be_available_and_switch_to_it((
@@ -334,12 +331,7 @@ def element_list(actionType, element):
     if actionType == "添加":
         log.info("开始添加元素: {0}".format(element.get("元素名称")))
         # 点击添加按钮
-        add_elements = browser.find_elements(By.XPATH, "//*[@id='addBtn']//*[text()='添加']")
-        for e in add_elements:
-            if e.is_displayed():
-                e.click()
-                sleep(2)
-                break
+        browser.find_element(By.XPATH, "//*[@id='query_steps_tb']//*[@id='addBtn']").click()
         result = element_set(**element)
 
     elif actionType == "修改":
@@ -354,12 +346,7 @@ def element_list(actionType, element):
             browser.find_element(By.XPATH, "//*[@field='elementName']//*[text()='{0}']".format(obj)).click()
         finally:
             # 点击修改按钮
-            edit_elements = browser.find_elements(By.XPATH, "//*[@id='editBtn']//*[text()='修改']")
-            for e in edit_elements:
-                if e.is_displayed():
-                    e.click()
-                    sleep(2)
-                    break
+            browser.find_element(By.XPATH, "//*[@id='query_steps_tb']//*[@id='editBtn']").click()
             result = element_set(**element)
 
     elif actionType == "删除":
@@ -374,11 +361,7 @@ def element_list(actionType, element):
             browser.find_element(By.XPATH, "//*[@field='elementName']//*[text()='{0}']".format(obj)).click()
         finally:
             # 点击删除按钮
-            edit_elements = browser.find_elements(By.XPATH, "//*[@id='delBtn']//*[text()='删除']")
-            for e in edit_elements:
-                if e.is_displayed():
-                    e.click()
-                    break
+            browser.find_element(By.XPATH, "//*[@id='query_steps_tb']//*[@id='delBtn']").click()
             alert = BeAlertBox(back_iframe="default")
             msg = alert.get_msg()
             if alert.title_contains(obj, auto_click_ok=False):
@@ -388,7 +371,7 @@ def element_list(actionType, element):
                 if alert.title_contains("删除成功"):
                     log.info("元素 {0} 删除成功".format(obj))
                     # 切换到节点配置iframe
-                    browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                    browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                     # 切换到业务配置iframe
                     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[@id='busi_crawler_node']"))
 
@@ -399,12 +382,12 @@ def element_list(actionType, element):
             else:
                 log.warning("元素 {0} 删除失败，失败提示: {1}".format(obj, msg))
                 result = False
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     elif actionType == "复制":
         log.info("开始复制元素: {0}".format(element.get("元素名称")))
         # 点击复制按钮
-        browser.find_element(By.XPATH, "//*[@id='copyBtn']//*[text()='复制']").click()
+        browser.find_element(By.XPATH, "//*[@id='query_steps_tb']//*[@id='copyBtn']").click()
         # 等待页面加载
         wait = WebDriverWait(browser, 30)
         wait.until(ec.frame_to_be_available_and_switch_to_it((
@@ -421,7 +404,7 @@ def element_list(actionType, element):
         # 查询复制元素
         copy_element = element.get("复制元素")
         browser.find_element(By.XPATH, "//*[@name='elementName']/preceding-sibling::input").send_keys(copy_element)
-        browser.find_element(By.XPATH, "//*[@id='btn']//span[text()='查询']").click()
+        browser.find_element(By.XPATH, "//*[@id='btn']").click()
         sleep(1)
         page_wait()
         # 选择复制元素
@@ -461,7 +444,7 @@ def element_list(actionType, element):
             else:
                 log.warning("元素 {0} 复制失败，失败提示: {1}".format(copy_element, msg))
                 result = False
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
             # 切换到节点iframe
             browser.switch_to.frame(
                 browser.find_element(By.XPATH, "//iframe[contains(@src,'./node/crawlerNode.html?')]"))
@@ -480,7 +463,7 @@ def element_set(**kwargs):
     :param kwargs: 元素信息
     :return:
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
 
     # 等待页面加载
     page_wait()
@@ -489,6 +472,7 @@ def element_set(**kwargs):
     wait = WebDriverWait(browser, 30)
     wait.until(ec.frame_to_be_available_and_switch_to_it((
         By.XPATH, "//iframe[contains(@src,'crawlerStepsEdit.html')]")))
+    sleep(1)
     wait = WebDriverWait(browser, 30)
     wait.until(ec.element_to_be_clickable((By.XPATH, "//*[@name='elementName']/preceding-sibling::input")))
     sleep(1)
@@ -808,7 +792,7 @@ def element_set(**kwargs):
                     log.info("选择重复步骤: {0} 成功".format(s))
                 else:
                     log.warning("选择重复步骤失败，失败提示: {0}".format(msg))
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
 
                 # 切换到节点iframe
                 browser.switch_to.frame(
@@ -830,7 +814,7 @@ def element_set(**kwargs):
         sleep(1)
 
     # 保存元素
-    browser.find_element(By.XPATH, "//*[@onclick='saveFetchElementContents()']//*[text()='保存']").click()
+    browser.find_element(By.XPATH, "//*[@onclick='saveFetchElementContents()']").click()
 
     alert = BeAlertBox(back_iframe="default")
     msg = alert.get_msg()
@@ -840,7 +824,7 @@ def element_set(**kwargs):
     else:
         log.warning("元素操作失败，失败提示: {0}".format(msg))
         result = False
-    set_global_var("ResultMsg", msg, False)
+    gbl.temp.set("ResultMsg", msg)
 
     if result:
         # 切换到节点iframe
@@ -860,7 +844,7 @@ def attach_remote_set(storage_type, ftp, dir_name, use_var, choose_type, file_na
     :param file_name: 文件名，关键字或正则（字典）
     :param file_type: 文件类型
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 存储类型
     if storage_type:
         browser.find_element(By.XPATH, "//*[text()='{0}']".format(storage_type)).click()
@@ -973,7 +957,7 @@ def attach_remote_set(storage_type, ftp, dir_name, use_var, choose_type, file_na
                 if alert.title_contains("成功"):
                     log.info("保存正则模版成功")
                     # 切换到节点iframe
-                    browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                    browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                     # 切换到业务配置iframe
                     browser.switch_to.frame(
                         browser.find_element(By.XPATH, "//iframe[@id='busi_crawler_node']"))
@@ -989,7 +973,7 @@ def attach_remote_set(storage_type, ftp, dir_name, use_var, choose_type, file_na
                             By.XPATH, "//iframe[contains(@src,'/VisualModeler/frame/regexcube/regexpTmplPopUpWin.html')]"))
                 else:
                     log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-                set_global_var("resultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
             else:
                 browser.switch_to.parent_frame()
 

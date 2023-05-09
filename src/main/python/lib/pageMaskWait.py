@@ -5,7 +5,7 @@
 from time import sleep
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def page_wait(interval=0.1, timeout=30):
@@ -15,7 +15,7 @@ def page_wait(interval=0.1, timeout=30):
     :param timeout: 超时时间，默认30秒
     """
     time_count = 0
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     while time_count <= timeout:
         try:
             browser.find_element(By.XPATH, "//*[@class='datagrid-mask' and @style='display:block']")

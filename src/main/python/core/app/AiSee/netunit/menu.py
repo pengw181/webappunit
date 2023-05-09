@@ -6,11 +6,11 @@ from time import sleep
 from selenium.webdriver.common.by import By
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def choose_domain(domain):
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     page_wait(timeout=120)
 
     # 点击领域选择下拉按钮
@@ -27,7 +27,7 @@ def choose_domain(domain):
 
 
 def choose_menu(menu):
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 进入网元管理，系统自动加载网元列表，等待页面加载
     page_wait(timeout=120)
     # 选择菜单

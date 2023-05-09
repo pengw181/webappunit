@@ -4,7 +4,7 @@
 
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
@@ -16,7 +16,7 @@ def get_table_data(data_table_xpath, column_table_xpath=None, limit=20, return_c
     :param return_column: 输出是否包含列名
     :return: 二维表
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 获取输出变量
     columns = []
     table_data = []
@@ -36,8 +36,11 @@ def get_table_data(data_table_xpath, column_table_xpath=None, limit=20, return_c
             for data in data_grid:
                 tmp.append(data.get_attribute("innerText"))
             log.debug("第{0}行：【{1}】".format(i, ','.join(tmp)))
-            table_data.append(tmp)
-            i += 1
+            if len(tmp) > 0:
+                table_data.append(tmp)
+                i += 1
+            else:
+                break
         except NoSuchElementException:
             break
     log.info("表格数据信息:\n{}".format(table_data))
@@ -59,7 +62,7 @@ def get_table_data2(table_xpath, return_column=False):
     :param return_column: 输出是否包含列名
     :return: 二维表
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 获取输出变量
     columns = []
     table_data = []

@@ -10,8 +10,9 @@ from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.input import set_textarea
 from src.main.python.lib.level import choose_level
+from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class TableModeEData:
@@ -24,7 +25,7 @@ class TableModeEData:
         :param table_main_iframe_xpath:
         :param col_iframe_xpath:
         """
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.eData_iframe_xpath = eData_iframe_xpath
         self.tab_xpath = tab_xpath
         self.tab_iframe_xpath = tab_iframe_xpath
@@ -151,7 +152,7 @@ class TableModeEData:
             log.info("配置更新规则成功")
         else:
             log.warning("配置更新规则失败，失败提示: {0}".format(msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def bind_cmd_info(self, query):
         """
@@ -173,6 +174,7 @@ class TableModeEData:
             # 再次点击收起下拉框
             self.browser.find_element(By.XPATH, "//*[@id='level']/following-sibling::span//a").click()
             log.info("设置网元分类: {0}".format(level))
+            sleep(1)
 
         # 厂家
         if query.__contains__("厂家"):
@@ -180,13 +182,16 @@ class TableModeEData:
             self.browser.find_element(By.XPATH, "//*[@id='vendor']/following-sibling::span//a").click()
             self.browser.find_element(By.XPATH, "//*[contains(@id,'vendor') and text()='{0}']".format(vendor)).click()
             log.info("设置厂家: {0}".format(vendor))
+            sleep(1)
 
         # 设备型号
         if query.__contains__("设备型号"):
             model = query.get("设备型号")
             self.browser.find_element(By.XPATH, "//*[@id='netunitModel']/following-sibling::span//a").click()
-            self.browser.find_element(
-                By.XPATH, "//*[contains(@id,'netunitModel') and text()='{0}']".format(model)).click()
+            panel_xpath = getPanelXpath()
+            wait = WebDriverWait(self.browser, 30)
+            wait.until(ec.element_to_be_clickable((By.XPATH, panel_xpath + "//*[text()='{0}']".format(model))))
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(model)).click()
             log.info("设置设备型号: {0}".format(model))
 
         # 查询

@@ -11,13 +11,13 @@ from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.core.app.AiSee.netunit.menu import choose_menu
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class Confirm(object):
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         choose_menu(menu="登录配置确认")
 
         # 切到登录配置确认页面
@@ -115,7 +115,7 @@ class Confirm(object):
             else:
                 log.warning("确认失败，失败提示: {0}".format(msg))
                 alert.click_ok()
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def confirm_selected(self, condition, netunit_list):
         """
@@ -144,7 +144,7 @@ class Confirm(object):
             else:
                 log.warning("确认失败，失败提示: {0}".format(msg))
                 alert.click_ok()
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def cancel_selected(self, condition, netunit_list):
         """
@@ -173,4 +173,4 @@ class Confirm(object):
             else:
                 log.warning("取消配置下发失败，失败提示: {0}".format(msg))
                 alert.click_ok()
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)

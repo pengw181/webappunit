@@ -13,13 +13,13 @@ from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.input import set_textarea
 from src.main.python.lib.loadData import load_sample
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class RegularCube:
     
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.needJumpIframe = False
 
     def setRegular(self, set_type=None, regular_name=None, advance_mode=None, regular=None, expression=None,
@@ -144,7 +144,7 @@ class RegularCube:
                 for obj in obj_lis:
                     obj_id_list.append(obj.get_attribute("obj_id"))
                 log.info("从正则魔方获取标签obj_id: {0}".format(obj_id_list))
-                set_global_var("ObjIDs", obj_id_list, False)
+                gbl.temp.set("ObjIDs", obj_id_list)
 
         elif set_type == "添加":
             # 如果是选择正则魔方，needJumpIframe为false,上面会自动返回到上层iframe，调用方只需要手动关闭窗口或不做处理。
@@ -281,7 +281,7 @@ class RegularCube:
                     By.XPATH, "//*[contains(text(),'模版名称')]/../following-sibling::div[1]//*[contains(@id,'_textbox_input')]")))
                 if attach_timestamp:
                     regular_name = regular_name + '_' + datetime.now().strftime('%Y%m%d%H%M%S')
-                set_global_var("RegularName", regular_name)
+                gbl.service.set("RegularName", regular_name)
                 self.browser.find_element(
                     By.XPATH, "//*[contains(text(),'模版名称')]/../following-sibling::div[1]//*[contains(@id,'_textbox_input')]").send_keys(
                     regular_name)

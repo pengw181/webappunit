@@ -11,7 +11,7 @@ from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.processVar import choose_var
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def script_business(node_name, script_name, ver_no, params, advance_set):
@@ -68,7 +68,7 @@ def script_business(node_name, script_name, ver_no, params, advance_set):
         }
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     sleep(1)
     # 设置节点名称
     if node_name:
@@ -148,7 +148,7 @@ def script_business(node_name, script_name, ver_no, params, advance_set):
         log.info("保存业务配置成功")
     else:
         log.warning("保存业务配置失败，失败提示: {0}".format(msg))
-    set_global_var("ResultMsg", msg, False)
+    gbl.temp.set("ResultMsg", msg)
 
     # 刷新页面，返回画流程图
     browser.refresh()
@@ -161,7 +161,7 @@ def script_param_set(param_key, param_type, param_value):
     :param param_type: 设置方式
     :param param_value: 参数值
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 获取参数所在行号
     row_index = browser.find_element(
         By.XPATH, "//*[@field='paramName']/*[text()='{}']/../preceding-sibling::td/div".format(

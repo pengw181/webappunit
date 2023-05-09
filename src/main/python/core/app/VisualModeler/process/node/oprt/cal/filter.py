@@ -6,8 +6,9 @@ from time import sleep
 from selenium.webdriver.common.by import By
 from src.main.python.core.app.VisualModeler.process.node.oprt.loop import condition
 from src.main.python.lib.processVar import choose_var
+from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def filter(input_var, expression, output_var, output_col, value_type, transpose):
@@ -40,7 +41,7 @@ def filter(input_var, expression, output_var, output_col, value_type, transpose)
     }
 
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 切换到过滤运算iframe
     browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[contains(@src,'operateCfgFilter.html')]"))
 
@@ -87,14 +88,11 @@ def filter(input_var, expression, output_var, output_col, value_type, transpose)
         for e1 in elements:
             if e1.is_displayed():
                 e1.click()
-                elements = browser.find_elements(
-                    By.XPATH, "//*[contains(@id,'valueType') and text()='{0}']".format(value_type))
-                for e2 in elements:
-                    if e2.is_displayed():
-                        e2.click()
-                        log.info("设置赋值方式: {0}".format(value_type))
-                        sleep(1)
-                        break
+                panel_xpath = getPanelXpath()
+                browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(value_type)).click()
+                log.info("设置赋值方式: {0}".format(value_type))
+                sleep(1)
+                break
 
     # 是否转置
     js = 'return $("#isTranspose")[0].checked;'

@@ -2,25 +2,29 @@
 # @Author: peng wei
 # @Time: 2021/12/24 下午3:07
 
+import json
 from time import sleep
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
-from selenium.webdriver import ActionChains
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver import ActionChains
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.input import set_textarea
 from src.main.python.core.app.AlarmPlatform.menu import choose_menu
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.pagination import Pagination
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.positionPanel import getPanelXpath
+from src.main.python.lib.dateUtil import set_calendar
+from src.main.python.lib.dateCalculation import calculation
+from src.main.python.lib.globals import gbl
 from src.main.python.lib.logger import log
 
 
 class MsgTemplate:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.upperOrLower = None
         # 进入菜单
         choose_menu("告警配置-消息模版")
@@ -34,17 +38,102 @@ class MsgTemplate:
         page_wait()
         sleep(1)
 
-    def choose(self, msg_temp_name):
+    def search(self, query, need_choose=False):
         """
-        :param msg_temp_name: 消息模版名称
+        :param query: 查询条件，字典
+        :param need_choose: True/False
         """
-        input_ele = self.browser.find_element(By.XPATH, "//*[@name='templateName']/preceding-sibling::input")
-        input_ele.clear()
-        input_ele.send_keys(msg_temp_name)
-        self.browser.find_element(By.XPATH, "//span[text()='查询']").click()
+        if not isinstance(query, dict):
+            raise TypeError("查询条件需要是字典格式")
+        log.info("查询条件: {0}".format(json.dumps(query, ensure_ascii=False)))
+        select_item = None
+
+        # 告警计划名称
+        if query.__contains__("告警计划名称"):
+            plan_name = query.get("告警计划名称")
+            self.browser.find_element(By.XPATH, "//*[@name='alarmPlanName']/preceding-sibling::input[1]").clear()
+            self.browser.find_element(By.XPATH, "//*[@name='alarmPlanName']/preceding-sibling::input[1]").send_keys(
+                plan_name)
+
+        # 告警规则名称
+        if query.__contains__("告警规则名称"):
+            rule_name = query.get("告警规则名称")
+            self.browser.find_element(By.XPATH, "//*[@name='alarmRuleName']/preceding-sibling::input[1]").clear()
+            self.browser.find_element(By.XPATH, "//*[@name='alarmRuleName']/preceding-sibling::input[1]").send_keys(
+                rule_name)
+
+        # 消息模版名称
+        if query.__contains__("消息模版名称"):
+            template_name = query.get("消息模版名称")
+            self.browser.find_element(By.XPATH, "//*[@name='templateName']/preceding-sibling::input[1]").clear()
+            self.browser.find_element(By.XPATH, "//*[@name='templateName']/preceding-sibling::input[1]").send_keys(
+                template_name)
+            select_item = template_name
+
+        # 状态
+        if query.__contains__("状态"):
+            template_status = query.get("状态")
+            self.browser.find_element(By.XPATH, "//*[@name='templateState']/preceding-sibling::span//a").click()
+            panel_xpath = getPanelXpath()
+            self.browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(template_status)).click()
+
+        # 创建人
+        if query.__contains__("创建人"):
+            creator = query.get("创建人")
+            self.browser.find_element(By.XPATH, "//*[@name='creator']/preceding-sibling::input[1]").clear()
+            self.browser.find_element(By.XPATH, "//*[@name='creator']/preceding-sibling::input[1]").send_keys(
+                creator)
+
+        # 创建时间
+        if query.__contains__("创建时间"):
+            begin_time, end_time = query.get("创建时间")
+            # 开始时间
+            if begin_time:
+                self.browser.find_element(By.XPATH, "//*[@name='beginDate']/preceding-sibling::span//a").click()
+                if isinstance(begin_time, dict):
+                    # 间隔，0表示当前，正数表示未来，负数表示过去
+                    time_interval = begin_time.get("间隔")
+                    # 单位，年、月、天、时、分、秒
+                    time_unit = begin_time.get("单位")
+                    begin_time = calculation(interval=time_interval, unit=time_unit)
+                else:
+                    raise AttributeError("开始时间必须是字典")
+                set_calendar(date_s=begin_time, date_format='%Y-%m-%d %H:%M:%S')
+                log.info("设置创建开始时间: {0}".format(begin_time))
+
+            # 结束时间
+            if end_time:
+                self.browser.find_element(By.XPATH, "//*[@name='endDate']/preceding-sibling::span//a").click()
+                if isinstance(end_time, dict):
+                    # 间隔，0表示当前，正数表示未来，负数表示过去
+                    time_interval = end_time.get("间隔")
+                    # 单位，年、月、天、时、分、秒
+                    time_unit = end_time.get("单位")
+                    end_time = calculation(interval=time_interval, unit=time_unit)
+                else:
+                    raise AttributeError("结束时间必须是字典")
+                set_calendar(date_s=end_time, date_format='%Y-%m-%d %H:%M:%S')
+                log.info("设置创建结束时间: {0}".format(end_time))
+
+        # 查询
+        self.browser.find_element(By.XPATH, "//*[@funcid='AlarmPlatform_msg_query']").click()
         page_wait()
-        self.browser.find_element(By.XPATH, "//*[@field='templateName']//a[text()='{}']".format(msg_temp_name)).click()
-        log.info("已选择消息模版: {}".format(msg_temp_name))
+        alert = BeAlertBox(timeout=1, back_iframe=False)
+        if alert.exist_alert:
+            msg = alert.get_msg()
+            log.info("弹出框返回: {0}".format(msg))
+            gbl.temp.set("ResultMsg", msg)
+            return
+        if need_choose:
+            if select_item:
+                try:
+                    self.browser.find_element(
+                        By.XPATH, "//*[@field='templateName']//*[text()='{0}']".format(select_item)).click()
+                except NoSuchElementException:
+                    raise KeyError("未找到匹配数据")
+                log.info("选择: {0}".format(select_item))
+            else:
+                raise KeyError("条件不足，无法选择数据")
 
     def add(self, rule_name, msg_temp_name, title, remark, config_model, result_tag, tag_config, input_template):
         """
@@ -76,11 +165,11 @@ class MsgTemplate:
             log.info("数据 {0} 添加成功".format(msg_temp_name))
         else:
             log.warning("数据 {0} 添加失败，失败提示: {1}".format(msg_temp_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
-    def update(self, obj, msg_temp_name, title, remark, config_model, result_tag, tag_config, input_template):
+    def update(self, template, msg_temp_name, title, remark, config_model, result_tag, tag_config, input_template):
         """
-        :param obj: 消息模版名称
+        :param template: 消息模版名称
         :param msg_temp_name: 消息模版名称
         :param title: 模版标题
         :param remark: 消息模版描述
@@ -89,12 +178,12 @@ class MsgTemplate:
         :param tag_config: 模版配置，字典
         :param input_template: 模版输入
         """
-        log.info("开始修改数据")
-        self.choose(obj)
+        self.search(query={"消息模版名称": template}, need_choose=True)
         self.browser.find_element(By.XPATH, "//*[@id='editBtn']").click()
         alert = BeAlertBox(timeout=3, back_iframe=False)
         if alert.exist_alert:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
             return
         else:
             self.browser.switch_to.parent_frame()
@@ -112,10 +201,10 @@ class MsgTemplate:
             alert = BeAlertBox()
             msg = alert.get_msg()
             if alert.title_contains("保存成功"):
-                log.info("{0} 修改成功".format(obj))
+                log.info("{0} 修改成功".format(template))
             else:
-                log.warning("{0} 修改失败，失败提示: {1}".format(obj, msg))
-            set_global_var("ResultMsg", msg, False)
+                log.warning("{0} 修改失败，失败提示: {1}".format(template, msg))
+            gbl.temp.set("ResultMsg", msg)
 
     def msg_temp_page(self, rule_name, msg_temp_name, title, remark, config_model, result_tag, tag_config, input_template):
         """
@@ -147,7 +236,7 @@ class MsgTemplate:
         else:
             self.upperOrLower = "lower"
             log.info("表字段小写")
-        set_global_var("UpperOrLower", self.upperOrLower, False)
+        gbl.temp.set("UpperOrLower", self.upperOrLower)
 
         # 消息模版名称
         if msg_temp_name:
@@ -188,7 +277,7 @@ class MsgTemplate:
                 dict_name = tag[1]
 
                 # 字段转换大小写
-                if get_global_var("UpperOrLower") == "upper":
+                if gbl.temp.get("UpperOrLower") == "upper":
                     tag_name = tag_name.upper()
                 else:
                     tag_name = tag_name.lower()
@@ -250,7 +339,7 @@ class MsgTemplate:
                 tag_name = tag_info.get("标签名称")
 
                 # 字段转换大小写
-                if get_global_var("UpperOrLower") == "upper":
+                if gbl.temp.get("UpperOrLower") == "upper":
                     tag_name = tag_name.upper()
                 else:
                     tag_name = tag_name.lower()
@@ -339,6 +428,31 @@ class MsgTemplate:
             set_textarea(textarea=input_template_textarea, msg=input_template)
             log.info("模版输入设置值: {0}".format(input_template))
 
+    def _get_current_status(self):
+        """
+        获取当前状态，需要先点击该行
+        :return: True/False
+        """
+        # 先获取所有消息模版行对象，抽取node-id组成数组
+        rule_elements = self.browser.find_elements(
+            By.XPATH, "//tr[contains(@id,'dg_datagrid-row-r') and not(contains(@id,'rule'))]")
+        rule_node_ids = [element.get_attribute("node-id") for element in rule_elements]
+        try:
+            # 判断当前选中行的node-id是在第几行，从而判断状态开关
+            rule = self.browser.find_element(
+                By.XPATH, "//tr[contains(@class,'selected')]")
+            node_id = rule.get_attribute("node-id")
+            i = None
+            for i in range(len(rule_node_ids)):
+                if node_id == rule_node_ids[i]:
+                    break
+            js = 'return $(".active_template_op")[{0}].checked;'.format(i+1)
+            current_status = self.browser.execute_script(js)
+        except NoSuchElementException:
+            log.warning("请点击一行消息模版")
+            current_status = False
+        return current_status
+
     def update_status(self, msg_temp_name, set_status, research=True):
         """
         :param msg_temp_name: 消息模版名称
@@ -346,7 +460,7 @@ class MsgTemplate:
         :param research: 是否重新查询，默认true
         """
         if research:
-            self.choose(msg_temp_name)
+            self.search(query={"消息模版名称": msg_temp_name}, need_choose=True)
 
         # 获取当前状态
         js = 'return $(".active_template_op")[0].checked;'
@@ -363,110 +477,40 @@ class MsgTemplate:
                 log.info("{0} {1} 成功".format(set_status, msg_temp_name))
             else:
                 log.warning("{0} {1} 失败，失败提示: {2}".format(set_status, msg_temp_name, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def set_default_template(self, msg_temp_name, set_default):
         """
         :param msg_temp_name: 消息模版名称
         :param set_default: 默认模版，是/否
         """
-        self.choose(msg_temp_name)
+        self.search(query={"消息模版名称": msg_temp_name}, need_choose=True)
 
         # 获取当前状态
         js = 'return $(".is_default_template")[0].checked;'
         default_status = self.browser.execute_script(js)
         log.info("【默认模版】勾选状态: {0}".format(default_status))
 
-        if set_default == "是":
-            if default_status:
-                log.info("{0}已经设置为默认模版".format(msg_temp_name))
-                set_global_var("ResultMsg", "操作成功", False)
+        temp = True if set_default == "是" else False
+        if temp ^ default_status:
+            self.browser.find_element(
+                By.XPATH, "//*[text()='{0}']/../../../following-sibling::td[3]/div/span".format(msg_temp_name)).click()
+            alert = BeAlertBox(back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("操作成功"):
+                log.info("消息模版 {0} 默认模版状态更新为 {1}".format(msg_temp_name, set_default))
+            elif alert.title_contains("模版已禁用，不能设置为默认消息模版"):
+                log.warning("更新默认消息模版状态失败，失败提示: {0}".format(msg))
             else:
-                self.browser.find_element(
-                    By.XPATH, "//*[text()='{0}']/../../../following-sibling::td[3]/div/span".format(msg_temp_name)).click()
-                alert = BeAlertBox(back_iframe=False)
-                msg = alert.get_msg()
-                if alert.title_contains("操作成功"):
-                    log.info("{0}已经设置为默认模版".format(msg_temp_name))
-                elif alert.title_contains("模版已禁用，不能设置为默认消息模版"):
-                    log.warning("更新默认消息模版状态失败，失败提示: {0}".format(msg))
-                else:
-                    log.warning("更新默认消息模版状态失败，失败提示: {0}".format(msg))
-                set_global_var("ResultMsg", msg, False)
-        else:
-            if default_status:
-                self.browser.find_element(
-                    By.XPATH, "//*[text()='{0}']/../../../following-sibling::td[3]/div/span".format(msg_temp_name)).click()
-                alert = BeAlertBox(back_iframe=False)
-                msg = alert.get_msg()
-                if alert.title_contains("操作成功"):
-                    log.info("更新默认消息模版状态成功")
-                else:
-                    log.warning("更新默认消息模版状态失败，失败提示: {0}".format(msg))
-                set_global_var("ResultMsg", msg, False)
-            else:
-                log.info("{0}已经取消设置为默认模版".format(msg_temp_name))
-
-    def query(self, query):
-        """
-        :param query: 查询条件
-        """
-        if isinstance(query, dict):
-            # 告警计划名称
-            if query.__contains__("告警计划名称"):
-                alarm_plan_name = query.get("告警计划名称")
-                self.browser.find_element(By.XPATH, "//*[@name='alarmPlanName']/preceding-sibling::input").clear()
-                self.browser.find_element(
-                    By.XPATH, "//*[@name='alarmPlanName']/preceding-sibling::input").send_keys(alarm_plan_name)
-                log.info("告警计划名称输入: {0}".format(alarm_plan_name))
-
-            # 告警规则名称
-            if query.__contains__("告警规则名称"):
-                alarm_rule_name = query.get("告警规则名称")
-                self.browser.find_element(By.XPATH, "//*[@name='alarmRuleName']/preceding-sibling::input").clear()
-                self.browser.find_element(
-                    By.XPATH, "//*[@name='alarmRuleName']/preceding-sibling::input").send_keys(alarm_rule_name)
-                log.info("告警规则名称输入: {0}".format(alarm_rule_name))
-
-            # 消息模版名称
-            if query.__contains__("消息模版名称"):
-                template_name = query.get("消息模版名称")
-                self.browser.find_element(By.XPATH, "//*[@name='templateName']/preceding-sibling::input").clear()
-                self.browser.find_element(
-                    By.XPATH, "//*[@name='templateName']/preceding-sibling::input").send_keys(template_name)
-                log.info("消息模版名称输入: {0}".format(template_name))
-
-            # 状态
-            if query.__contains__("状态"):
-                status = query.get("状态")
-                self.browser.find_element(
-                    By.XPATH, "//*[@textboxname ='templateState']/following-sibling::span//a").click()
-                sleep(1)
-                self.browser.find_element(
-                    By.XPATH, "//*[contains(@id,'templateState') and text()='{0}']".format(status)).click()
-                log.info("状态选择: {0}".format(status))
-
-            # 创建人
-            if query.__contains__("创建人"):
-                creator = query.get("创建人")
-                self.browser.find_element(By.XPATH, "//*[@name='creator']/preceding-sibling::input").clear()
-                self.browser.find_element(By.XPATH, "//*[@name='creator']/preceding-sibling::input").send_keys(creator)
-                log.info("创建人输入: {0}".format(creator))
-
-            # 查询
-            self.browser.find_element(By.XPATH, "//*[@funcid='AlarmPlatform_msg_query']//*[text()='查询']").click()
-            page_wait()
-            sleep(1)
-            return
-        else:
-            raise KeyError("查询条件不是字典")
+                log.warning("更新默认消息模版状态失败，失败提示: {0}".format(msg))
+            gbl.temp.set("ResultMsg", msg)
 
     def batch_enable(self, query):
         """
         # 批量将查询后的数据启用
         :param query: 查询条件
         """
-        self.query(query)
+        self.search(query=query, need_choose=False)
         table_xpath = "//*[@id='tb']/following-sibling::div[2]/table"
         p = Pagination(table_xpath)
         p.set_page_size(size=50)
@@ -480,7 +524,7 @@ class MsgTemplate:
                 js = 'return $(".active_template_op")[{0}].checked;'.format(num)
                 current_status = self.browser.execute_script(js)
                 if current_status:
-                    set_global_var("ResultMsg", "操作成功", False)
+                    gbl.temp.set("ResultMsg", "操作成功")
                     if num == len(row_status)-1:
                         break
                     else:
@@ -502,7 +546,7 @@ class MsgTemplate:
                     else:
                         log.warning("第{0}行启用失败，失败提示: {1}".format(num+1, msg))
                         break
-                    set_global_var("ResultMsg", msg, False)
+                    gbl.temp.set("ResultMsg", msg)
         else:
             raise Exception("未查询到记录")
 
@@ -511,7 +555,7 @@ class MsgTemplate:
         # 批量将查询后的数据启用
         :param query: 查询条件
         """
-        self.query(query)
+        self.search(query=query, need_choose=False)
         table_xpath = "//*[@id='tb']/following-sibling::div[2]/table"
         p = Pagination(table_xpath)
         p.set_page_size(size=50)
@@ -525,7 +569,7 @@ class MsgTemplate:
                 js = 'return $(".active_template_op")[{0}].checked;'.format(num)
                 current_status = self.browser.execute_script(js)
                 if not current_status:
-                    set_global_var("ResultMsg", "操作成功", False)
+                    gbl.temp.set("ResultMsg", "操作成功")
                     if num == len(row_status)-1:
                         break
                     else:
@@ -547,7 +591,7 @@ class MsgTemplate:
                     else:
                         log.warning("第{0}行禁用失败，失败提示: {1}".format(num+1, msg))
                         break
-                    set_global_var("ResultMsg", msg, False)
+                    gbl.temp.set("ResultMsg", msg)
         else:
             raise Exception("未查询到记录")
 
@@ -555,9 +599,8 @@ class MsgTemplate:
         """
         :param msg_temp_name: 消息模版名称
         """
-        log.info("开始删除数据")
-        self.choose(msg_temp_name)
-        self.browser.find_element(By.XPATH, "//*[text()='删除']").click()
+        self.search(query={"消息模版名称": msg_temp_name}, need_choose=True)
+        self.browser.find_element(By.XPATH, "//*[@id='deleteBtn']").click()
 
         alert = BeAlertBox(back_iframe=False)
         msg = alert.get_msg()
@@ -572,7 +615,7 @@ class MsgTemplate:
                 log.warning("{0} 删除失败，失败提示: {1}".format(msg_temp_name, msg))
         else:
             log.warning("{0} 删除失败，失败提示: {1}".format(msg_temp_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def data_clear(self, msg_temp_name, fuzzy_match=False):
         """
@@ -580,10 +623,7 @@ class MsgTemplate:
         :param fuzzy_match: 模糊匹配
         """
         # 用于清除数据，在测试之前执行, 使用关键字开头模糊查询
-        self.browser.find_element(By.XPATH, "//*[@name='templateName']/preceding-sibling::input[1]").clear()
-        self.browser.find_element(By.XPATH, "//*[@name='templateName']/preceding-sibling::input[1]").send_keys(msg_temp_name)
-        self.browser.find_element(By.XPATH, "//*[text()='查询']").click()
-        page_wait()
+        self.search(query={"消息模版名称": msg_temp_name}, need_choose=False)
         fuzzy_match = True if fuzzy_match == "是" else False
         if fuzzy_match:
             record_element = self.browser.find_elements(
@@ -591,46 +631,59 @@ class MsgTemplate:
         else:
             record_element = self.browser.find_elements(
                 By.XPATH, "//*[@field='templateName']//*[text(),'{0}']".format(msg_temp_name))
-        if len(record_element) > 0:
-            exist_data = True
-
-            while exist_data:
-                pe = record_element[0]
-                search_result = pe.text
-                pe.click()
-                # 将模版禁用
-                self.update_status(msg_temp_name=search_result, set_status="禁用", research=False)
-                log.info("选择: {0}".format(search_result))
-                # 删除
-                self.browser.find_element(By.XPATH, "//*[text()='删除']").click()
-                alert = BeAlertBox(back_iframe=False)
-                msg = alert.get_msg()
-                if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
-                    alert.click_ok()
-                    alert = BeAlertBox(back_iframe=False)
-                    msg = alert.get_msg()
-                    if alert.title_contains("成功"):
-                        log.info("{0} 删除成功".format(search_result))
-                        page_wait()
-                        if fuzzy_match:
-                            # 重新获取页面查询结果
-                            record_element = self.browser.find_elements(
-                                By.XPATH, "//*[@field='templateName']//*[starts-with(text(),'{0}')]".format(msg_temp_name))
-                            if len(record_element) > 0:
-                                exist_data = True
-                            else:
-                                # 查询结果为空,修改exist_data为False，退出循环
-                                log.info("数据清理完成")
-                                exist_data = False
-                        else:
-                            break
-                    else:
-                        raise Exception("删除数据时出现未知异常: {0}".format(msg))
-                else:
-                    # 无权操作
-                    log.warning("{0} 清理失败，失败提示: {1}".format(msg_temp_name, msg))
-                    set_global_var("ResultMsg", msg, False)
-                    break
-        else:
+        if len(record_element) == 0:
             # 查询结果为空,结束处理
             log.info("查询不到满足条件的数据，无需清理")
+            return
+
+        exist_data = True
+        while exist_data:
+            pe = record_element[0]
+            search_result = pe.text
+            pe.click()
+            if self._get_current_status():
+                self.browser.find_element(
+                    By.XPATH, "//*[text()='{0}']/../../../following-sibling::td[2]/div/span".format(
+                        search_result)).click()
+                log.info("禁用消息模版: {}".format(search_result))
+                alert = BeAlertBox(back_iframe=False)
+                msg = alert.get_msg()
+                if alert.title_contains("操作成功"):
+                    log.info("禁用消息模版 {0}".format(search_result))
+                elif alert.title_contains("模版已禁用，不能设置为默认消息模版"):
+                    log.warning("更新默认消息模版状态失败，失败提示: {0}".format(msg))
+                    return
+                else:
+                    log.warning("更新默认消息模版状态失败，失败提示: {0}".format(msg))
+                    return
+                # 重新点击该行记录
+                self.browser.find_element(
+                    By.XPATH, "//*[@field='templateName']//*[text(),'{0}']".format(search_result)).click()
+            # 删除
+            self.browser.find_element(By.XPATH, "//*[@id='deleteBtn']").click()
+            alert = BeAlertBox(back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
+                alert.click_ok()
+                alert = BeAlertBox(back_iframe=False)
+                msg = alert.get_msg()
+                if alert.title_contains("成功"):
+                    log.info("{0} 删除成功".format(search_result))
+                    page_wait()
+                    if fuzzy_match:
+                        # 重新获取页面查询结果
+                        record_element = self.browser.find_elements(
+                            By.XPATH, "//*[@field='templateName']//*[starts-with(text(),'{0}')]".format(msg_temp_name))
+                        if len(record_element) == 0:
+                            # 查询结果为空,修改exist_data为False，退出循环
+                            log.info("数据清理完成")
+                            exist_data = False
+                    else:
+                        break
+                else:
+                    raise Exception("删除数据时出现未知异常: {0}".format(msg))
+            else:
+                # 无权操作
+                log.warning("{0} 清理失败，失败提示: {1}".format(msg_temp_name, msg))
+                gbl.temp.set("ResultMsg", msg)
+                break

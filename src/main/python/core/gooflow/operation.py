@@ -2,20 +2,21 @@
 # @Author: peng wei
 # @Time: 2021/7/21 上午10:48
 
+import re
 import json
 from time import sleep
 from datetime import datetime
 from src.main.python.core.loginPage import login
 from src.main.python.core.mainPage import AiSee
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 from src.main.python.core.gooflow.controller import serverRun
 
 
 def basic_run(steps):
     # 定义一个标识，True/False，用于判断步骤是否执行正确
     run_flag = False
-    set_global_var("ResultMsg", "", False)
+    gbl.temp.set("ResultMsg", "")
 
     # 多个操作以至少3个横杆换行分割
     patt = r"-{3,}"
@@ -37,7 +38,7 @@ def basic_run(steps):
         # 开始执行，func为操作方法名
         step_one = str(step_one).strip()
         # 替换变量
-        step_one = replace_global_var(step_one)
+        step_one = gbl.replace(step_one)
         log.info("步骤：\n%s" % json.dumps(json.loads(step_one), indent=4, ensure_ascii=False))
         func = eval(step_one).get("操作")
         param = eval(step_one).get("参数")
@@ -84,5 +85,5 @@ def basic_run(steps):
             """
             run_flag = serverRun(func, param)
 
-    set_global_var("EndTime", datetime.now().strftime('%Y%m%d%H%M%S'), False)
+    gbl.temp.set("EndTime", datetime.now().strftime('%Y%m%d%H%M%S'))
     return run_flag

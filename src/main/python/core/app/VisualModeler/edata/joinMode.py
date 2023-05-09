@@ -9,7 +9,7 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.action_chains import ActionChains
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class JoinModeEData:
@@ -20,7 +20,7 @@ class JoinModeEData:
         :param eData_iframe_xpath:
         :param tab_xpath:
         """
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.eData_iframe_xpath = eData_iframe_xpath
         self.tab_xpath = tab_xpath
 
@@ -322,7 +322,7 @@ class JoinModeEData:
             log.info("{0} 添加成功".format(new_table_name))
         else:
             log.warning("{0} 添加失败，失败提示: {1}".format(new_table_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def add_union_table(self, join_table_list, join_type, join_table_set, new_table_name, field, new_table_set):
         """
@@ -523,4 +523,4 @@ class JoinModeEData:
             log.info("{0} 添加成功".format(new_table_name))
         else:
             log.warning("{0} 添加失败，失败提示: {1}".format(new_table_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)

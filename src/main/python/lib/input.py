@@ -12,7 +12,7 @@ from src.main.python.lib.processVar import var_list_panel
 from src.main.python.lib.waitElement import WaitElement
 from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def set_textarea(textarea, msg):
@@ -35,85 +35,12 @@ def set_textarea(textarea, msg):
         raise KeyError("当前是textarea输入框，支持单行、多行，单行是使用字符串，多行需要使用数组参数，数组里每个值单独一行")
 
 
-def set_text_enable_var1(input_xpath, form_selector, msg):
-    """
-    :param input_xpath: 输入框元素xpath
-    :param form_selector: xpath，用来定位输入${后出现的下拉框，如//*[@id='form_id']，找父节点的上一个平级的id
-    :param msg: 输入内容，任意文本，可携带${a}
-    """
-    browser = get_global_var("browser")
-    input_elements = browser.find_elements(By.XPATH, input_xpath)
-    status = False
-    for element in input_elements:
-        if element.is_displayed():
-            log.info("成功定位到输入框")
-            element.clear()
-
-            # 解析msg
-            end_flag = False
-            current_position = 0
-            begin_position = 0
-            while not end_flag:
-                # 寻找最近的${
-                position = msg[begin_position:].find("${")  # 相对位置
-                if position > -1:
-                    # 找到${
-                    enter_text = msg[begin_position: current_position + position + 2]  # 相对位置, +2表示${
-                    element.send_keys(enter_text)
-                    sleep(1)
-                    current_position = current_position + position + 2
-
-                    # 寻找最近的}
-                    end_position = msg[current_position:].find("}")  # 相对位置
-                    if end_position > -1:
-                        end_position = current_position + end_position
-                        var_name = msg[begin_position + position + 2: end_position]
-                        begin_position = current_position = end_position + 1
-
-                        # 等待变量下拉框加载
-                        wait = WebDriverWait(browser, 30)
-                        wait.until(ec.visibility_of_element_located((
-                            By.XPATH, form_selector + "/following-sibling::div[contains(@style,'display: block')]")))
-                        sleep(1)
-                        click_flag = False
-                        ele_wait = WaitElement(timeout=10)
-                        var_element = ele_wait.wait_element("//*[contains(@id,'_combobox_') and text()='{0}']".format(var_name))
-                        if var_element:
-                            log.info("变量引用找到变量: {0}".format(var_name))
-                            var_element.click()
-                            click_flag = True
-                            sleep(1)
-
-                        if not click_flag:
-                            raise Exception("变量引用选择变量失败, 找不到变量【{0}】".format(var_name))
-                    else:
-                        element.send_keys(Keys.TAB)
-                        enter_text = msg[begin_position:]
-                        element.send_keys(enter_text)
-                        end_flag = True
-                else:
-                    enter_text = msg[begin_position:]
-                    element.send_keys(enter_text)
-                    element.click()
-                    end_flag = True
-
-            # 检测输入框最终输入内容是否和预期一致
-            sleep(1)
-            final_value = browser.find_element(By.XPATH, input_xpath + "/following-sibling::input").get_attribute("value")
-            if final_value == msg:
-                status = True
-                break
-            else:
-                raise Exception("输入框当前值: {0}, 预期输入: {1}, 两者不匹配".format(final_value, msg))
-    return status
-
-
 def set_text_enable_var(input_xpath, msg):
     """
     :param input_xpath: 输入框元素xpath
     :param msg: 输入内容，任意文本，可携带${a}
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     input_element = browser.find_element(By.XPATH, input_xpath)
     input_element.clear()
     log.info("定位到输入框，并清空输入框")

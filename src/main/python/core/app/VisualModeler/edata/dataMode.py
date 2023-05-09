@@ -7,14 +7,14 @@ from selenium.webdriver.common.by import By
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.input import set_textarea
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class DateModeEData:
     # 数据模式
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
 
     def table_name_page(self, table_name, field, remark):
         """

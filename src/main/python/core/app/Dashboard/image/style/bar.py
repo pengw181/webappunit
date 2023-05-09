@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from src.main.python.lib.css import change_color
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def bar_style(theme, custom_theme_colors, custom_bg_color, bg_color_rgb, data_dis_direction, show_metrics,
@@ -60,7 +60,7 @@ def bar_style(theme, custom_theme_colors, custom_bg_color, bg_color_rgb, data_di
     }
     """
     tab_div_xpath = "//*[@class='dlg-tabsDiv']"
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     action = ActionChains(browser)
     # 主题样式
     if theme:

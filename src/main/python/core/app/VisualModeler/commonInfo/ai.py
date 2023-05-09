@@ -14,13 +14,13 @@ from src.main.python.lib.input import set_textarea
 from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.upload import upload
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class AiModel:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.algorithm = None
         DoctorWho().choose_menu("常用信息管理-AI模型管理")
         self.browser.switch_to.frame(
@@ -61,7 +61,7 @@ class AiModel:
         if alert.exist_alert:
             msg = alert.get_msg()
             log.info("弹出框返回: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
             return
         if need_choose:
             if select_item:
@@ -107,7 +107,7 @@ class AiModel:
             log.info("{0} 添加成功".format(model_name))
         else:
             log.warning("{0} 添加失败，失败提示: {1}".format(model_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def update(self, model, model_name, model_desc, train_scale, test_scale, timeout, file_name, params, columns):
         """
@@ -128,7 +128,8 @@ class AiModel:
         # 鉴于数据权限问题，在修改/删除数据时，需要判断是否有弹出框提示无权操作
         alert = BeAlertBox(back_iframe=False, timeout=2)
         if alert.exist_alert:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             wait = WebDriverWait(self.browser, 30)
             wait.until(ec.frame_to_be_available_and_switch_to_it((
@@ -147,7 +148,7 @@ class AiModel:
                 log.info("{0} 修改成功".format(model))
             else:
                 log.warning("{0} 修改失败，失败提示: {1}".format(model, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def algorithm_page(self, application_mode, algorithm, model_name, model_desc, train_scale, test_scale, timeout,
                        file_name, params, columns):
@@ -231,7 +232,7 @@ class AiModel:
                 sleep(1)
             else:
                 log.warning("{0} 上传失败，失败提示: {1}".format(file_name, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
         # 参数设置
         if params:
@@ -386,7 +387,8 @@ class AiModel:
         # 鉴于数据权限问题，在修改/删除数据时，需要判断是否有弹出框提示无权操作
         alert = BeAlertBox(back_iframe=False, timeout=2)
         if alert.exist_alert:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             wait = WebDriverWait(self.browser, 30)
             wait.until(ec.frame_to_be_available_and_switch_to_it((
@@ -407,7 +409,7 @@ class AiModel:
                 sleep(1)
             else:
                 log.warning("{0} 提交训练失败，失败提示: {1}".format(model_name, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def test_model(self, model_name):
         """
@@ -420,7 +422,8 @@ class AiModel:
         # 鉴于数据权限问题，在修改/删除数据时，需要判断是否有弹出框提示无权操作
         alert = BeAlertBox(back_iframe=False, timeout=2)
         if alert.exist_alert:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             wait = WebDriverWait(self.browser, 30)
             wait.until(ec.frame_to_be_available_and_switch_to_it((
@@ -441,7 +444,7 @@ class AiModel:
                 sleep(1)
             else:
                 log.warning("{0} 提交测试失败，失败提示: {1}".format(model_name, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def delete(self, model_name):
         """
@@ -466,7 +469,7 @@ class AiModel:
         else:
             # 无权操作
             log.warning("{0} 删除失败，失败提示: {1}".format(model_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def import_disturb(self, model_name, file_name):
         """
@@ -497,60 +500,54 @@ class AiModel:
             log.info("{0} 导入成功".format(file_name))
         else:
             log.warning("{0} 导入失败，失败提示: {1}".format(file_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def data_clear(self, model_name, fuzzy_match=False):
         # 用于清除数据，在测试之前执行, 使用关键字开头模糊查询
-        self.browser.find_element(By.XPATH, "//*[@name='modelName']/preceding-sibling::input").clear()
-        self.browser.find_element(By.XPATH, "//*[@name='modelName']/preceding-sibling::input").send_keys(model_name)
-        self.browser.find_element(By.XPATH, "//*[@id='queryButton']//*[text()='查询']").click()
-        page_wait()
+        self.search(query={"模型名称": model_name}, need_choose=False)
         fuzzy_match = True if fuzzy_match == "是" else False
         if fuzzy_match:
             record_element = self.browser.find_elements(
-                By.XPATH, "//*[@field='modelName']/*[starts-with(text(),'{0}')]".format(model_name))
+                By.XPATH, "//*[@field='modelName']//*[starts-with(text(),'{0}')]".format(model_name))
         else:
             record_element = self.browser.find_elements(
-                By.XPATH, "//*[@field='modelName']/*[text()='{0}']".format(model_name))
-        if len(record_element) > 0:
-            exist_data = True
-
-            while exist_data:
-                pe = record_element[0]
-                search_result = pe.text
-                pe.click()
-                log.info("选择: {0}".format(search_result))
-                # 删除
-                self.browser.find_element(By.XPATH, "//*[@onclick='deleteModel();").click()
-                alert = BeAlertBox(back_iframe=False)
-                msg = alert.get_msg()
-                if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
-                    alert.click_ok()
-                    alert = BeAlertBox(back_iframe=False)
-                    msg = alert.get_msg()
-                    if alert.title_contains("成功"):
-                        log.info("{0} 删除成功".format(search_result))
-                        page_wait()
-                        if fuzzy_match:
-                            # 重新获取页面查询结果
-                            record_element = self.browser.find_elements(
-                                By.XPATH, "//*[@field='modelName']/*[starts-with(text(),'{0}')]".format(model_name))
-                            if len(record_element) > 0:
-                                exist_data = True
-                            else:
-                                # 查询结果为空,修改exist_data为False，退出循环
-                                log.info("数据清理完成")
-                                exist_data = False
-                        else:
-                            break
-                    else:
-                        raise Exception("删除数据时出现未知异常: {0}".format(msg))
-                else:
-                    # 无权操作
-                    log.warning("{0} 清理失败，失败提示: {1}".format(model_name, msg))
-                    set_global_var("ResultMsg", msg, False)
-                    break
-        else:
+                By.XPATH, "//*[@field='modelName']//*[text()='{0}']".format(model_name))
+        if len(record_element) == 0:
             # 查询结果为空,结束处理
             log.info("查询不到满足条件的数据，无需清理")
-            pass
+            return
+
+        exist_data = True
+        while exist_data:
+            pe = record_element[0]
+            search_result = pe.text
+            pe.click()
+            log.info("选择: {0}".format(search_result))
+            # 删除
+            self.browser.find_element(By.XPATH, "//*[@onclick='deleteModel();").click()
+            alert = BeAlertBox(back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
+                alert.click_ok()
+                alert = BeAlertBox(back_iframe=False)
+                msg = alert.get_msg()
+                if alert.title_contains("成功"):
+                    log.info("{0} 删除成功".format(search_result))
+                    page_wait()
+                    if fuzzy_match:
+                        # 重新获取页面查询结果
+                        record_element = self.browser.find_elements(
+                            By.XPATH, "//*[@field='modelName']//*[starts-with(text(),'{0}')]".format(model_name))
+                        if len(record_element) == 0:
+                            # 查询结果为空,修改exist_data为False，退出循环
+                            log.info("数据清理完成")
+                            exist_data = False
+                    else:
+                        break
+                else:
+                    raise Exception("删除数据时出现未知异常: {0}".format(msg))
+            else:
+                # 无权操作
+                log.warning("{0} 清理失败，失败提示: {1}".format(model_name, msg))
+                gbl.temp.set("ResultMsg", msg)
+                break

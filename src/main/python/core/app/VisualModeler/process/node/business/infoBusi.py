@@ -12,7 +12,7 @@ from src.main.python.lib.chooseDir import choose_file_dir
 from src.main.python.lib.input import set_text_enable_var
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def info_business(node_name, mode, info_desc, show, info, download_set, var_name):
@@ -109,7 +109,7 @@ def info_business(node_name, mode, info_desc, show, info, download_set, var_name
         }
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 等待页面加载
     wait = WebDriverWait(browser, 30)
     wait.until(ec.element_to_be_clickable((By.XPATH, "//*[@name='node_name']/preceding-sibling::input[1]")))
@@ -264,7 +264,7 @@ def info_business(node_name, mode, info_desc, show, info, download_set, var_name
         log.info("保存业务配置成功")
     else:
         log.warning("保存业务配置失败，失败提示: {0}".format(msg))
-    set_global_var("ResultMsg", msg, False)
+    gbl.temp.set("ResultMsg", msg)
 
     # 刷新页面，返回画流程图
     browser.refresh()
@@ -272,7 +272,7 @@ def info_business(node_name, mode, info_desc, show, info, download_set, var_name
 
 
 def set_download_file(file_path, file_name, row_num):
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     num = row_num
     # 目录
     browser.find_element(By.XPATH, "//*[@name='catagoryId{0}']/preceding-sibling::input".format(num)).click()

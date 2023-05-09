@@ -13,7 +13,7 @@ from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.wrap import Wrap
 from src.main.python.core.app.Dashboard.dashboard.editDashboard import EditDashboard
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class Dashboard:
@@ -21,7 +21,7 @@ class Dashboard:
     default_msg = "操作成功"
 
     def __init__(self, iframe_xpath):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         wait = WebDriverWait(self.browser, 30)
         wait.until(ec.frame_to_be_available_and_switch_to_it((By.XPATH, iframe_xpath)))
         log.info("进入仪表盘页面")
@@ -60,7 +60,7 @@ class Dashboard:
         self.browser.find_element(By.XPATH, "//*[@class='index-menu']/a[@class='{0}']".format(menu_class)).click()
         page_wait(10)
         # 操作没有提示，给一个默认提示
-        set_global_var("ResultMsg", self.default_msg, False)
+        gbl.temp.set("ResultMsg", self.default_msg)
         sleep(1)
 
     def show(self, dashboard_name):
@@ -79,7 +79,7 @@ class Dashboard:
                 element.click()
                 log.info("选择仪表盘: {0}".format(dashboard_name))
                 # 操作没有提示，给一个默认提示
-                set_global_var("ResultMsg", self.default_msg, False)
+                gbl.temp.set("ResultMsg", self.default_msg)
                 page_wait()
                 sleep(1)
                 break
@@ -126,7 +126,7 @@ class Dashboard:
                 dashboard_name)).click()
         log.info("预览仪表盘【{0}】".format(dashboard_name))
         # 操作没有提示，给一个默认提示
-        set_global_var("ResultMsg", self.default_msg, False)
+        gbl.temp.set("ResultMsg", self.default_msg)
 
     def setPublicStatus(self, dashboard_name, public):
         """
@@ -163,7 +163,7 @@ class Dashboard:
         else:
             log.info("仪表盘【{0}】公开状态已经是 {1}".format(dashboard_name, public))
         # 操作没有提示，给一个默认提示
-        set_global_var("ResultMsg", self.default_msg, False)
+        gbl.temp.set("ResultMsg", self.default_msg)
 
     def setActivateStatus(self, dashboard_name, activate):
         """
@@ -200,7 +200,7 @@ class Dashboard:
         else:
             log.info("仪表盘【{0}】激活状态已经是 {1}".format(dashboard_name, activate))
         # 操作没有提示，给一个默认提示
-        set_global_var("ResultMsg", self.default_msg, False)
+        gbl.temp.set("ResultMsg", self.default_msg)
 
     @Wrap(wrap_func='close_enter_dashboard')
     def add(self, dashboard_info):
@@ -208,7 +208,7 @@ class Dashboard:
         # 添加仪表盘
         :param dashboard_info: 仪表盘配置
         """
-        self.browser.find_element(By.XPATH, "//*[@title='新建仪表盘']").click()
+        self.browser.find_element(By.XPATH, "//*[@onclick='dashboardList.create();']").click()
         dashboard = EditDashboard()
         dashboard_name = dashboard_info.get("仪表盘名称")
         subtitle = dashboard_info.get("仪表盘副标题")
@@ -233,7 +233,7 @@ class Dashboard:
         alert = BeAlertBox(timeout=2, back_iframe=False)
         if alert.exist_alert:
             msg = alert.get_msg()
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
         else:
             dashboard = EditDashboard()
             dashboard_name = dashboard_info.get("仪表盘名称")
@@ -265,10 +265,10 @@ class Dashboard:
                 log.info("删除仪表盘【{0}】成功".format(dashboard_name))
             else:
                 log.error("删除仪表盘【{0}】失败".format(dashboard_name))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
         else:
             log.info("设置仪表盘【{0}】激活状态失败，失败原因: {1}".format(dashboard_name, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     @Wrap(wrap_func='close_enter_dashboard')
     def activateLibView(self, dashboard_name):
@@ -293,7 +293,7 @@ class Dashboard:
                 dashboard_name)).click()
         log.info("预览公开库仪表盘【{0}】".format(dashboard_name))
         # 操作没有提示，给一个默认提示
-        set_global_var("ResultMsg", self.default_msg, False)
+        gbl.temp.set("ResultMsg", self.default_msg)
 
     @Wrap(wrap_func='close_enter_dashboard')
     def clone(self, dashboard_name):
@@ -325,10 +325,10 @@ class Dashboard:
             if toast.msg_contains("克隆仪表盘成功"):
                 sleep(1)
                 log.info("克隆公开库仪表盘【{0}】成功".format(dashboard_name))
-                set_global_var("ResultMsg", msg, False)
+                gbl.temp.set("ResultMsg", msg)
         else:
             log.info("克隆仪表盘【{0}】失败，失败原因: {1}".format(dashboard_name, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def bind(self, dashboard_name, image_list):
         """
@@ -343,7 +343,7 @@ class Dashboard:
         alert = BeAlertBox(timeout=2, back_iframe=False)
         if alert.exist_alert:
             msg = alert.get_msg()
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
         else:
             dashboard = EditDashboard()
             dashboard.addInImage(image_list)
@@ -390,7 +390,7 @@ class Dashboard:
                         msg = toast.get_msg()
                         if not toast.msg_contains("删除成功"):
                             log.info("删除仪表盘失败，失败原因: {0}".format(msg))
-                            set_global_var("ResultMsg", msg, False)
+                            gbl.temp.set("ResultMsg", msg)
                             break
 
                         log.info("{0} {1}".format(search_result, msg))
@@ -411,7 +411,7 @@ class Dashboard:
                 else:
                     # 无权操作
                     log.warning("清理失败，失败提示: {0}".format(msg))
-                    set_global_var("ResultMsg", msg, False)
+                    gbl.temp.set("ResultMsg", msg)
                     break
         else:
             # 查询结果为空,结束处理

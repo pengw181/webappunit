@@ -14,7 +14,7 @@ from src.main.python.core.app.Dashboard.image.image import Image
 from src.main.python.core.app.Dashboard.dashboard.editDashboard import EditDashboard
 from src.main.python.core.app.Dashboard.dictionary.dictionary import Dictionary
 from src.main.python.core.app.VisualModeler.process.draw.processInfo import Process
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class ReportDashboard:
@@ -23,7 +23,7 @@ class ReportDashboard:
 
     def __init__(self):
 
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         self.current_win_handle = WindowHandles()
         page_wait(3)
 
@@ -67,7 +67,7 @@ class ReportDashboard:
         self.current_win_handle.save("仪表盘主配置页")
         self.current_win_handle.switch("仪表盘主配置页")
         sleep(1)
-        set_global_var("ResultMsg", self.default_msg, False)
+        gbl.temp.set("ResultMsg", self.default_msg)
 
     @staticmethod
     def set_dashboard(dashboard_info):
@@ -164,7 +164,7 @@ class ReportDashboard:
         self.current_win_handle.switch("流程图编辑器")
         # 点击刷新
         self.browser.find_element(By.XPATH, "//*[@onclick='queryVarCfgList()']").click()
-        set_global_var("ResultMsg", self.default_msg, False)
+        gbl.temp.set("ResultMsg", self.default_msg)
 
     def view_dashboard(self, var_name):
         """
@@ -176,4 +176,4 @@ class ReportDashboard:
         self.browser.find_element(By.XPATH, "//*[text()='{0}']/../following-sibling::td[2]//a".format(var_name)).click()
         self.current_win_handle.save("图像预览")
         self.current_win_handle.switch("图像预览")
-        set_global_var("ResultMsg", self.default_msg, False)
+        gbl.temp.set("ResultMsg", self.default_msg)

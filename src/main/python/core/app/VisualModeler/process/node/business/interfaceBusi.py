@@ -10,7 +10,7 @@ from src.main.python.lib.processVar import choose_var
 from src.main.python.lib.input import set_blob
 from src.main.python.lib.loadData import load_sample
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def interface_business(node_name, interface, request_body, request_header, params, advance_set):
@@ -58,7 +58,7 @@ def interface_business(node_name, interface, request_body, request_header, param
     }
 
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 设置节点名称
     if node_name:
         browser.find_element(By.XPATH, "//*[@name='node_name']/preceding-sibling::input[1]").clear()
@@ -161,7 +161,7 @@ def interface_business(node_name, interface, request_body, request_header, param
         log.info("保存业务配置成功")
     else:
         log.warning("保存业务配置失败，失败提示: {0}".format(msg))
-    set_global_var("ResultMsg", msg, False)
+    gbl.temp.set("ResultMsg", msg)
 
     # 刷新页面，返回画流程图
     browser.refresh()
@@ -174,7 +174,7 @@ def set_header(param_name, param_type, param_value):
     :param param_type: 设置方式
     :param param_value: 参数值
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     req_header = "//*[contains(@data-i18n-text,'reqestHeaderList')]/following-sibling::div"
     browser.find_element(
         By.XPATH, req_header + "//*[text()='{0}']/../following-sibling::td[1][@field='valueType']//a".format(
@@ -189,7 +189,8 @@ def set_header(param_name, param_type, param_value):
     sleep(1)
     if param_type == "变量":
         browser.find_element(
-            By.XPATH, req_header + "//*[text()='{0}']/../following-sibling::td[2][@field='paramValue']//a".format(param_name)).click()
+            By.XPATH, req_header + "//*[text()='{0}']/../following-sibling::td[2][@field='paramValue']//a".format(
+                param_name)).click()
         # 选择变量
         choose_var(var_name=param_value)
     else:
@@ -209,7 +210,7 @@ def set_param(param_name, param_type, param_value):
     :param param_type: 设置方式
     :param param_value: 参数值
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     req_header = "//*[contains(@data-i18n-text,'paraList')]/following-sibling::div"
     browser.find_element(
         By.XPATH, req_header + "//*[text()='{0}']/../following-sibling::td[1][@field='valueType']//a".format(

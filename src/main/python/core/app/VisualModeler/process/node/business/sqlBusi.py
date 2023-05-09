@@ -12,7 +12,7 @@ from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.processVar import choose_var
 from src.main.python.lib.input import set_blob
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def sql_business(node_name, opt_mode, sql_config, advance_set):
@@ -120,7 +120,7 @@ def sql_business(node_name, opt_mode, sql_config, advance_set):
         }
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     sleep(1)
     # 设置节点名称
     if node_name:
@@ -198,7 +198,7 @@ def sql_business(node_name, opt_mode, sql_config, advance_set):
         log.info("保存业务配置成功")
     else:
         log.warning("保存业务配置失败，失败提示: {0}".format(msg))
-    set_global_var("ResultMsg", msg, False)
+    gbl.temp.set("ResultMsg", msg)
 
     # 刷新页面，返回画流程图
     browser.refresh()
@@ -210,7 +210,7 @@ def sql_advance_mode(db, sql):
     :param db: 数据库，必填
     :param sql: 编写sql，必填
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 选择数据库
     if db:
         browser.find_element(By.XPATH, "//*[@name='dbId']/preceding-sibling::input").click()
@@ -241,7 +241,7 @@ def sql_normal_mode(var, db, storage_mode, table_name, col_map):
     :param table_name: 表选择，必填
     :param col_map: 字段映射，字典，必填
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 点击添加
     browser.find_element(By.XPATH, "//*[@id='normalCfgAdd']//*[text()='添加']").click()
     page_wait()

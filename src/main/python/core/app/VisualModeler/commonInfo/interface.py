@@ -16,13 +16,13 @@ from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.core.app.VisualModeler.doctorWho import DoctorWho
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class Interface:
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         DoctorWho().choose_menu("常用信息管理-第三方接口管理")
         self.browser.switch_to.frame(
             self.browser.find_element(
@@ -64,13 +64,13 @@ class Interface:
         if alert.exist_alert:
             msg = alert.get_msg()
             log.info("弹出框返回: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
             return
         if need_choose:
             if select_item:
                 try:
                     self.browser.find_element(
-                        By.XPATH, "//*[@field='serverName']/*[text()='{0}']".format(select_item)).click()
+                        By.XPATH, "//*[@field='interfaceName']//*[text()='{0}']".format(select_item)).click()
                 except NoSuchElementException:
                     raise KeyError("未找到匹配数据")
                 log.info("选择: {0}".format(select_item))
@@ -116,7 +116,7 @@ class Interface:
             log.info("数据 {0} 添加成功".format(interface_name))
         else:
             log.warning("数据 {0} 添加失败，失败提示: {1}".format(interface_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def update(self, interface, interface_name, interface_type, interface_url, data_type, interface_namespace, interface_method,
                request_type, timeout, proxy_name, result_sample, request_header, request_parameter, request_body):
@@ -162,7 +162,7 @@ class Interface:
             log.info("数据 {0} 修改成功".format(interface_name))
         else:
             log.warning("数据 {0} 修改失败，失败提示: {1}".format(interface_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def test(self, interface_name):
         """
@@ -176,7 +176,8 @@ class Interface:
         alert = BeAlertBox(back_iframe=False, timeout=1)
         exist = alert.exist_alert
         if exist:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             wait = WebDriverWait(self.browser, 10)
             wait.until(ec.frame_to_be_available_and_switch_to_it((
@@ -192,7 +193,7 @@ class Interface:
                 log.info("{0} 测试成功".format(interface_name))
             else:
                 log.warning("{0} 测试失败，测试返回结果: {1}".format(interface_name, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def interface_page(self, interface_name, interface_type, interface_url, data_type, interface_namespace, interface_method,
                        request_type, timeout, proxy_name, result_sample, request_header, request_parameter, request_body):
@@ -461,7 +462,7 @@ class Interface:
             log.warning("{0} 删除失败，失败提示: {1}".format(interface_name, msg))
         else:
             log.warning("{0} 删除失败，失败提示: {1}".format(interface_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def data_clear(self, interface_name, fuzzy_match=False):
         """
@@ -469,10 +470,7 @@ class Interface:
         :param fuzzy_match: 模糊匹配
         """
         # 用于清除数据，在测试之前执行, 使用关键字开头模糊查询
-        self.browser.find_element(By.XPATH, "//*[@name='interfaceName']/preceding-sibling::input").clear()
-        self.browser.find_element(By.XPATH, "//*[@name='interfaceName']/preceding-sibling::input").send_keys(interface_name)
-        self.browser.find_element(By.XPATH, "//*[@id='btn']//*[text()='查询']").click()
-        page_wait()
+        self.search(query={"接口名称": interface_name}, need_choose=False)
         fuzzy_match = True if fuzzy_match == "是" else False
         if fuzzy_match:
             record_element = self.browser.find_elements(
@@ -480,44 +478,42 @@ class Interface:
         else:
             record_element = self.browser.find_elements(
                 By.XPATH, "//*[@field='interfaceName']//*[@data-mtips='{}']".format(interface_name))
-        if len(record_element) > 0:
-            exist_data = True
-
-            while exist_data:
-                pe = record_element[0]
-                search_result = pe.text
-                pe.click()
-                log.info("选择: {0}".format(search_result))
-                # 删除
-                self.browser.find_element(By.XPATH, "//*[@id='delBtn']").click()
-                alert = BeAlertBox(back_iframe=False)
-                msg = alert.get_msg()
-                if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
-                    alert.click_ok()
-                    alert = BeAlertBox(back_iframe=False)
-                    msg = alert.get_msg()
-                    if alert.title_contains("成功"):
-                        log.info("{0} 删除成功".format(search_result))
-                        page_wait()
-                        if fuzzy_match:
-                            # 重新获取页面查询结果
-                            record_element = self.browser.find_elements(
-                                By.XPATH, "//*[@field='interfaceName']//*[starts-with(@data-mtips,'{}')]".format(interface_name))
-                            if len(record_element) > 0:
-                                exist_data = True
-                            else:
-                                # 查询结果为空,修改exist_data为False，退出循环
-                                log.info("数据清理完成")
-                                exist_data = False
-                        else:
-                            break
-                    else:
-                        raise Exception("删除数据时出现未知异常: {0}".format(msg))
-                else:
-                    # 无权操作
-                    log.warning("{0} 清理失败，失败提示: {1}".format(interface_name, msg))
-                    set_global_var("ResultMsg", msg, False)
-                    break
-        else:
+        if len(record_element) == 0:
             # 查询结果为空,结束处理
             log.info("查询不到满足条件的数据，无需清理")
+            return
+
+        exist_data = True
+        while exist_data:
+            pe = record_element[0]
+            search_result = pe.text
+            pe.click()
+            log.info("选择: {0}".format(search_result))
+            # 删除
+            self.browser.find_element(By.XPATH, "//*[@id='delBtn']").click()
+            alert = BeAlertBox(back_iframe=False)
+            msg = alert.get_msg()
+            if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
+                alert.click_ok()
+                alert = BeAlertBox(back_iframe=False)
+                msg = alert.get_msg()
+                if alert.title_contains("成功"):
+                    log.info("{0} 删除成功".format(search_result))
+                    page_wait()
+                    if fuzzy_match:
+                        # 重新获取页面查询结果
+                        record_element = self.browser.find_elements(
+                            By.XPATH, "//*[@field='interfaceName']//*[starts-with(@data-mtips,'{}')]".format(interface_name))
+                        if len(record_element) == 0:
+                            # 查询结果为空,修改exist_data为False，退出循环
+                            log.info("数据清理完成")
+                            exist_data = False
+                    else:
+                        break
+                else:
+                    raise Exception("删除数据时出现未知异常: {0}".format(msg))
+            else:
+                # 无权操作
+                log.warning("{0} 清理失败，失败提示: {1}".format(interface_name, msg))
+                gbl.temp.set("ResultMsg", msg)
+                break

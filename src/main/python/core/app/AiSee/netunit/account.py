@@ -12,13 +12,13 @@ from src.main.python.lib.pageMaskWait import page_wait
 from src.main.python.core.app.AiSee.netunit.menu import choose_menu
 from src.main.python.lib.alertBox import BeAlertBox
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class AccountTemp(object):
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         choose_menu(menu="统一账号配置")
 
         # 切到统一账号管理页面
@@ -75,7 +75,7 @@ class AccountTemp(object):
             else:
                 log.warning("保存配置失败，失败提示: {0}".format(msg))
                 alert.click_ok()
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def update(self, obj_account_temp, account_temp_name, account_temp_type, remark):
         """
@@ -89,7 +89,8 @@ class AccountTemp(object):
         alert = BeAlertBox(back_iframe=False, timeout=1)
         exist = alert.exist_alert
         if exist:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             # 切换到修改账号模版页面iframe
             wait = WebDriverWait(self.browser, 30)
@@ -109,7 +110,7 @@ class AccountTemp(object):
             else:
                 log.warning("保存配置失败，失败提示: {0}".format(msg))
                 alert.click_ok()
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def account_temp_page(self, account_temp_name, account_temp_type, remark):
         """
@@ -155,7 +156,8 @@ class AccountTemp(object):
         alert = BeAlertBox(back_iframe=False, timeout=1)
         exist = alert.exist_alert
         if exist:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             # 切换到配置账号页面iframe
             wait = WebDriverWait(self.browser, 30)
@@ -177,7 +179,7 @@ class AccountTemp(object):
 class Account(object):
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
 
     def add(self, username, password, account_scope):
         """
@@ -191,7 +193,8 @@ class Account(object):
         alert = BeAlertBox(back_iframe="default", timeout=1)
         exist = alert.exist_alert
         if exist:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
             alert.click_ok()
         else:
             wait = WebDriverWait(self.browser, 30)
@@ -208,7 +211,7 @@ class Account(object):
             else:
                 log.warning("保存配置失败，失败提示: {0}".format(msg))
                 alert.click_ok()
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def choose(self, account_scope, creator=None):
         """
@@ -243,7 +246,7 @@ class Account(object):
         if account_scope == "公有":
             self.choose(account_scope=account_scope)
         else:
-            current_user = get_global_var("LoginUser")
+            current_user = gbl.service.get("LoginUser")
             self.choose(account_scope=account_scope, creator=current_user)
         self.browser.find_element(By.XPATH, "//*[@id='editBtn']").click()
         wait = WebDriverWait(self.browser, 30)
@@ -260,7 +263,7 @@ class Account(object):
         else:
             log.warning("保存配置失败，失败提示: {0}".format(msg))
             alert.click_ok()
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def account_page(self, account_scope, username, password):
         """
@@ -300,7 +303,7 @@ class Account(object):
             self.choose(account_scope=account_scope)
             obj_username = self.browser.find_element(By.XPATH, "//*[@data-mtips='公有']/../../following-sibling::td[1]/div")
         else:
-            current_user = get_global_var("LoginUser")
+            current_user = gbl.service.get("LoginUser")
             self.choose(account_scope=account_scope, creator=current_user)
             obj_username = self.browser.find_element(
                 By.XPATH, "//*[@data-mtips='私有']/../../following-sibling::td[3]/*[text()='{}']/../preceding-sibling::td[2]/div".format(
@@ -321,7 +324,7 @@ class Account(object):
                 log.warning("{0} 删除失败，失败提示: {1}".format(username, msg))
         else:
             log.warning("{0} 删除失败，失败提示: {1}".format(username, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def issue_account(self):
         # 账号下发

@@ -15,13 +15,13 @@ from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.core.mainPage import AiSee
 from src.main.python.core.app.AiSee.netunit.menu import choose_menu, choose_domain
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 class NetUnit(object):
 
     def __init__(self):
-        self.browser = get_global_var("browser")
+        self.browser = gbl.service.get("browser")
         AiSee().choose_menu_func(menu="网元管理")
         wait = WebDriverWait(self.browser, 120)
         wait.until(ec.frame_to_be_available_and_switch_to_it((
@@ -29,7 +29,7 @@ class NetUnit(object):
         page_wait()
         sleep(1)
 
-        choose_domain(domain=get_global_var("Domain"))
+        choose_domain(domain=gbl.service.get("Domain"))
         choose_menu(menu="网元信息(自身)")
 
         # 切到网元信息配置页面
@@ -99,7 +99,7 @@ class NetUnit(object):
         if alert.exist_alert:
             msg = alert.get_msg()
             log.info("弹出框返回: {0}".format(msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
             return
         if need_choose:
             if select_item:
@@ -111,19 +111,6 @@ class NetUnit(object):
                 log.info("选择: {0}".format(select_item))
             else:
                 raise KeyError("条件不足，无法选择数据")
-    #
-    # def choose(self, netunit_name):
-    #     """
-    #     :param netunit_name: 网元名称
-    #     """
-    #     input_ele = self.browser.find_element(By.XPATH, 
-    #         "//*[@id='netunitName']/following-sibling::span/input[1]")
-    #     input_ele.clear()
-    #     input_ele.send_keys(netunit_name)
-    #     self.browser.find_element(By.XPATH, "//*[@id='btn']//*[text()='查询']").click()
-    #     page_wait()
-    #     self.browser.find_element(By.XPATH, "//*[@field='netunitName']//*[@data-mtips='{}']".format(netunit_name)).click()
-    #     log.info("已选网元: {}".format(netunit_name))
 
     def add(self, netunit_name, netunit_type, ip, vendor, netunit_model, state, maxCocurrentNum):
         """
@@ -150,7 +137,7 @@ class NetUnit(object):
         else:
             log.warning("保存配置失败，失败提示: {0}".format(msg))
             alert.click_ok()
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def update(self, netunit, netunit_name, netunit_type, ip, vendor, netunit_model, state, maxCocurrentNum):
         """
@@ -168,7 +155,8 @@ class NetUnit(object):
         alert = BeAlertBox(back_iframe=False, timeout=1)
         exist = alert.exist_alert
         if exist:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             # 切换到修改网元信息页面iframe
             wait = WebDriverWait(self.browser, 30)
@@ -188,7 +176,7 @@ class NetUnit(object):
             else:
                 log.warning("保存配置失败，失败提示: {0}".format(msg))
                 alert.click_ok()
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def netunit_page(self, netunit_name, netunit_type, ip, vendor, netunit_model, state, maxCocurrentNum):
         """
@@ -271,7 +259,7 @@ class NetUnit(object):
         else:
             log.warning("保存配置失败，失败提示: {0}".format(msg))
             alert.click_ok()
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def delete(self, netunit_name):
         """
@@ -291,7 +279,7 @@ class NetUnit(object):
                 log.warning("{0} 删除失败，失败提示: {1}".format(netunit_name, msg))
         else:
             log.warning("{0} 删除失败，失败提示: {1}".format(netunit_name, msg))
-        set_global_var("ResultMsg", msg, False)
+        gbl.temp.set("ResultMsg", msg)
 
     def login_config(self, netunit_name, login_model_name, terminal, cmd_config):
         """
@@ -384,7 +372,8 @@ class NetUnit(object):
         alert = BeAlertBox(back_iframe=False, timeout=1)
         exist = alert.exist_alert
         if exist:
-            set_global_var("ResultMsg", alert.get_msg(), False)
+            msg = alert.get_msg()
+            gbl.temp.set("ResultMsg", msg)
         else:
             # 切换到登录模式配置页面iframe
             wait = WebDriverWait(self.browser, 30)
@@ -437,7 +426,7 @@ class NetUnit(object):
                     else:
                         log.warning("保存登录模式失败，失败提示: {0}".format(msg))
                         alert.click_ok()
-                    set_global_var("ResultMsg", msg, False)
+                    gbl.temp.set("ResultMsg", msg)
 
             # 指令配置
             if cmd_config:
@@ -489,7 +478,7 @@ class NetUnit(object):
                     else:
                         log.warning("保存终端指令失败，失败提示: {0}".format(msg))
                         alert.click_ok()
-                    set_global_var("ResultMsg", msg, False)
+                    gbl.temp.set("ResultMsg", msg)
 
                 # 登录指令
                 if cmd_config.__contains__("登录指令"):
@@ -539,7 +528,7 @@ class NetUnit(object):
                     else:
                         log.warning("保存登录指令失败，失败提示: {0}".format(msg))
                         alert.click_ok()
-                    set_global_var("ResultMsg", msg, False)
+                    gbl.temp.set("ResultMsg", msg)
 
     def set_terminal(self, terminal_name, login_type, username, password, ip, port, expected_str, failed_str, charset,
                      terminal_field):
@@ -839,7 +828,7 @@ class NetUnit(object):
                     else:
                         log.error("分配网元: {0}失败，失败原因: {1}".format(ne, msg))
                         break
-                    set_global_var("ResultMsg", msg, False)
+                    gbl.temp.set("ResultMsg", msg)
 
         # 关键字
         if keyword:
@@ -875,7 +864,7 @@ class NetUnit(object):
                     log.error("按 {0} 查询后，分配网元失败，失败原因: {1}".format(keyword, msg))
             else:
                 log.error("按 {0} 查询后，分配网元失败，失败原因: {1}".format(keyword, msg))
-            set_global_var("ResultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     def data_clear(self, netunit_name, fuzzy_match=False):
         """
@@ -895,44 +884,44 @@ class NetUnit(object):
         else:
             record_element = self.browser.find_elements(
                 By.XPATH, "//*[@field='netunitName']//*[text()='{0}']".format(netunit_name))
-        if len(record_element) > 0:
-            exist_data = True
-
-            while exist_data:
-                pe = record_element[0]
-                search_result = pe.text
-                pe.click()
-                log.info("选择: {0}".format(search_result))
-                # 删除
-                self.browser.find_element(By.XPATH, "//*[text()='删除']").click()
-                alert = BeAlertBox(back_iframe="default")
-                msg = alert.get_msg()
-                if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
-                    alert.click_ok()
-                    alert = BeAlertBox(back_iframe=False)
-                    msg = alert.get_msg()
-                    if alert.title_contains("成功"):
-                        log.info("{0} 删除成功".format(search_result))
-                        page_wait()
-                        if fuzzy_match:
-                            # 重新获取页面查询结果
-                            record_element = self.browser.find_elements(
-                                By.XPATH, "//*[@field='netunitName']//*[starts-with(text(),'{0}')]".format(netunit_name))
-                            if len(record_element) > 0:
-                                exist_data = True
-                            else:
-                                # 查询结果为空,修改exist_data为False，退出循环
-                                log.info("数据清理完成")
-                                exist_data = False
-                        else:
-                            break
-                    else:
-                        raise Exception("删除数据时出现未知异常: {0}".format(msg))
-                else:
-                    # 无权操作
-                    log.warning("{0} 清理失败，失败提示: {1}".format(netunit_name, msg))
-                    set_global_var("ResultMsg", msg, False)
-                    break
-        else:
+        if len(record_element) == 0:
             # 查询结果为空,结束处理
             log.info("查询不到满足条件的数据，无需清理")
+            return
+
+        exist_data = True
+        while exist_data:
+            pe = record_element[0]
+            search_result = pe.text
+            pe.click()
+            log.info("选择: {0}".format(search_result))
+            # 删除
+            self.browser.find_element(By.XPATH, "//*[text()='删除']").click()
+            alert = BeAlertBox(back_iframe="default")
+            msg = alert.get_msg()
+            if alert.title_contains("您确定需要删除{0}吗".format(search_result), auto_click_ok=False):
+                alert.click_ok()
+                alert = BeAlertBox(back_iframe=False)
+                msg = alert.get_msg()
+                if alert.title_contains("成功"):
+                    log.info("{0} 删除成功".format(search_result))
+                    page_wait()
+                    if fuzzy_match:
+                        # 重新获取页面查询结果
+                        record_element = self.browser.find_elements(
+                            By.XPATH, "//*[@field='netunitName']//*[starts-with(text(),'{0}')]".format(netunit_name))
+                        if len(record_element) > 0:
+                            exist_data = True
+                        else:
+                            # 查询结果为空,修改exist_data为False，退出循环
+                            log.info("数据清理完成")
+                            exist_data = False
+                    else:
+                        break
+                else:
+                    raise Exception("删除数据时出现未知异常: {0}".format(msg))
+            else:
+                # 无权操作
+                log.warning("{0} 清理失败，失败提示: {1}".format(netunit_name, msg))
+                gbl.temp.set("ResultMsg", msg)
+                break

@@ -10,8 +10,9 @@ from src.main.python.lib.regular import RegularCube
 from src.main.python.lib.input import set_textarea
 from src.main.python.lib.processVar import choose_var
 from src.main.python.lib.alertBox import BeAlertBox
+from src.main.python.lib.positionPanel import getPanelXpath
 from src.main.python.lib.logger import log
-from src.main.python.lib.globalVariable import *
+from src.main.python.lib.globals import gbl
 
 
 def regular(input_var, output_var, value_type, var_index, transpose, ruler, fetch):
@@ -112,7 +113,7 @@ def regular(input_var, output_var, value_type, var_index, transpose, ruler, fetc
         }
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     # 切换到正则运算iframe
     wait = WebDriverWait(browser, 30)
     wait.until(ec.frame_to_be_available_and_switch_to_it((By.XPATH, "//iframe[contains(@src,'operateCfgRegular.html')]")))
@@ -138,14 +139,11 @@ def regular(input_var, output_var, value_type, var_index, transpose, ruler, fetc
         for e1 in elements:
             if e1.is_displayed():
                 e1.click()
-                elements = browser.find_elements(
-                    By.XPATH, "//*[contains(@id,'valuetype') and text()='{0}']".format(value_type))
-                for e2 in elements:
-                    if e2.is_displayed():
-                        e2.click()
-                        log.info("设置赋值方式: {0}".format(value_type))
-                        sleep(1)
-                        break
+                panel_xpath = getPanelXpath()
+                browser.find_element(By.XPATH, panel_xpath + "//*[text()='{0}']".format(value_type)).click()
+                log.info("设置赋值方式: {0}".format(value_type))
+                sleep(1)
+                break
 
     # 数组索引
     if var_index:
@@ -185,9 +183,9 @@ def regular(input_var, output_var, value_type, var_index, transpose, ruler, fetc
             if alert.title_contains("成功"):
                 log.info("保存正则模版成功")
                 # 切换到节点iframe
-                browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("NodeIframe")))
+                browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("NodeIframe")))
                 # 切换到操作配置iframe
-                browser.switch_to.frame(browser.find_element(By.XPATH, get_global_var("OptIframe")))
+                browser.switch_to.frame(browser.find_element(By.XPATH, gbl.service.get("OptIframe")))
                 # 切换到运算配置iframe
                 browser.switch_to.frame(browser.find_element(By.XPATH, "//iframe[contains(@src,'operateVar.html')]"))
                 # 切换到正则运算iframe
@@ -195,7 +193,7 @@ def regular(input_var, output_var, value_type, var_index, transpose, ruler, fetc
                     browser.find_element(By.XPATH, "//iframe[contains(@src,'operateCfgRegular.html')]"))
             else:
                 log.warning("保存正则模版失败，失败提示: {0}".format(msg))
-            set_global_var("resultMsg", msg, False)
+            gbl.temp.set("ResultMsg", msg)
 
     # 输入样例数据
     if ruler.__contains__("样例数据"):
@@ -238,7 +236,7 @@ def regular_fetch(default_config, fetch_config):
         }
     }
     """
-    browser = get_global_var("browser")
+    browser = gbl.service.get("browser")
     fetch_ele = browser.find_element(By.XPATH, "//*[text()='取值配置']")
     browser.execute_script("arguments[0].scrollIntoView(true);", fetch_ele)
     log.info("开始取值配置")

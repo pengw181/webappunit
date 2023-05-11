@@ -22,7 +22,7 @@ class LoginPage:
 
     def __init__(self):
         chrome_driver_path = gbl.service.get("chromeDriverPath")
-        download_path = gbl.service.get("projectMainPath") + '/python/download/'
+        download_path = gbl.service.get("ProjectPath") + '/src/main/python/download/'
         self.browser = initBrowser(chrome_driver_path, download_path)
         gbl.service.set("browser", self.browser)
         self.page_url = gbl.service.get("PageUrl")

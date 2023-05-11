@@ -27,7 +27,7 @@ class Initiation:
     def remove_download_file():
 
         # 清空下载目录里的文件
-        download_path = gbl.service.get("projectMainPath") + '/python/download/'
+        download_path = gbl.service.get("ProjectPath") + '/src/main/python/download/'
         for f in os.listdir(download_path):
             file_data = download_path + f
             if os.path.isfile(file_data):

@@ -9,7 +9,7 @@ from src.main.python.lib.globals import gbl
 
 def upload(file_name, catalog=None, input_id='filebox_file_id_2'):
     browser = gbl.service.get("browser")
-    uploadPath = gbl.service.get("projectMainPath") + '/resources/upload/'
+    uploadPath = gbl.service.get("ProjectPath") + '/src/main/resources/upload/'
     if not uploadPath.endswith("/"):
         uploadPath += "/"
     if catalog:

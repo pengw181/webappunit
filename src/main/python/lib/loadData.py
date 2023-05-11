@@ -7,7 +7,7 @@ from src.main.python.lib.globals import gbl
 
 
 def load_sample(sample_file_name):
-    file_path = gbl.service.get("projectMainPath") + '/resources/sample_data/' + sample_file_name
+    file_path = gbl.service.get("ProjectPath") + '/src/main/resources/sample_data/' + sample_file_name
     log.info("从{}加载sample数据".format(file_path))
     content = []
     with open(file_path, 'r') as f:
